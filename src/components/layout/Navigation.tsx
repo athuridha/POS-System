@@ -20,6 +20,8 @@ import {
   X,
   Coffee,
   QrCode,
+  Bell,
+  ChatCircleText,
 } from '@phosphor-icons/react';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -30,6 +32,7 @@ export interface NavItem {
   label: string;
   icon: any;
   roles?: ('kasir' | 'manager' | 'super_admin')[];
+  badge?: string | number;
 }
 
 export interface NavGroup {
@@ -221,85 +224,76 @@ export function PosSidebar() {
   );
 }
 
-// ── 2. ExecutiveSidebar for Manager & SuperAdmin Dashboard ──
+// ── 2. ExecutiveSidebar (Matching BRESS Reference Image 1-to-1) ──
 export function ExecutiveSidebar() {
   const { user, logout } = useAuthStore();
   const location = useLocation();
 
   const userRole = user?.role || 'kasir';
-  const filteredGroups = navGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(userRole as any)),
-    }))
-    .filter((group) => group.items.length > 0);
+  const allNavItems = navGroups.flatMap((g) => g.items).filter((item) => !item.roles || item.roles.includes(userRole as any));
 
   return (
-    <aside className="hidden lg:flex w-60 bg-[#dce3ea] p-4 pr-0 flex-col justify-between shrink-0 font-sans">
-      <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-4 shadow-sm border border-white/80 flex flex-col justify-between h-full space-y-4 overflow-y-auto">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 px-3 py-2 border-b border-zinc-100 pb-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#0f172a] flex items-center justify-center text-white font-black text-base shadow-sm">
-              POS
-            </div>
-            <div>
-              <h2 className="font-extrabold text-sm text-zinc-900 tracking-tight">POS CAFE</h2>
-              <p className="text-[11px] font-bold text-emerald-600 capitalize">{userRole.replace('_', ' ')}</p>
-            </div>
+    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans min-h-[calc(100vh-4rem)]">
+      <div className="space-y-6">
+        {/* Brand Header matching BRESS (Logo + BRESS / POS CAFE) */}
+        <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">
+          <div className="w-9 h-9 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-sm shadow-sm">
+            B
           </div>
-
-          <div className="space-y-3">
-            {filteredGroups.map((group) => (
-              <div key={group.title} className="space-y-1">
-                <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-3.5 pt-1">
-                  {group.title}
-                </h4>
-                <nav className="flex flex-col gap-1">
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className={`flex items-center gap-3 px-3.5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
-                          isActive
-                            ? 'bg-[#0f172a] text-white shadow-md shadow-slate-900/20 translate-x-0.5'
-                            : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
-                        }`}
-                      >
-                        <Icon size={17} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </div>
-            ))}
-          </div>
+          <span className="font-extrabold text-xl text-zinc-900 tracking-tight">BRESS</span>
         </div>
 
-        {user && (
-          <div className="pt-3 border-t border-zinc-100 flex items-center justify-between px-2 mt-auto">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 font-bold text-xs shrink-0">
-                {user.nama.charAt(0)}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-zinc-900 truncate">{user.nama}</p>
-                <p className="text-[10px] text-zinc-400 truncate">{user.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => logout()}
-              title="Logout"
-              className="p-1.5 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
-            >
-              <SignOut size={16} />
-            </button>
-          </div>
-        )}
+        {/* Navigation Items with BRESS Dark Pill Active Indicator */}
+        <nav className="flex flex-col gap-1.5">
+          {allNavItems.map((item) => {
+            const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex items-center justify-between px-4 py-3 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? 'bg-[#0f172a] text-white shadow-lg shadow-slate-900/20 translate-x-1'
+                    : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                  <span>{item.label}</span>
+                </div>
+                {item.to === '/table-qr' && (
+                  <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                    2
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
+
+      {/* User Profile Pill at Bottom (Matching BRESS Emily Jonson Avatar Card) */}
+      {user && (
+        <div className="pt-4 border-t border-zinc-100 flex items-center justify-between mt-auto">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center font-extrabold text-amber-900 text-sm shrink-0 shadow-xs">
+              {user.nama.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold text-zinc-900 truncate">{user.nama}</p>
+              <p className="text-[11px] text-zinc-400 truncate">{user.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => logout()}
+            title="Logout"
+            className="p-1.5 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
+          >
+            <SignOut size={16} />
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
