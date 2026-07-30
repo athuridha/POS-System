@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users & Auth ────────────────────────────────────────────
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  nama         String
+  role         String   @default("kasir") // "kasir" | "manager"
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shifts Shift[]
+
+  @@map("users")
+}
+
+// ─── Menu: Categories, Products, Variants ────────────────────
+model Category {
+  id            String   @id @default(uuid())
+  namaKategori  String
+  urutan        Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id         String   @id @default(uuid())
+  categoryId String
+  namaProduk String
+  hargaDasar Int
+  imageUrl   String?
+  deskripsi  String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category Category         @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+  items    TransactionItem[]
+
+  @@map("products")
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  namaVarian    String
+  hargaTambahan Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product Product           @relation(fields: [productId], references: [id])
+  items   TransactionItem[]
+
+  @@map("product_variants")
+}
+
+// ─── Tables (Meja) ───────────────────────────────────────────
+model Table {
+  id        String   @id @default(uuid())
+  nomorMeja String   @unique
+  kapasitas Int      @default(4)
+  status    String   @default("kosong") // "kosong" | "terisi"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@map("tables")
+}
+
+// ─── Shifts ──────────────────────────────────────────────────
+model Shift {
+  id            String    @id @default(uuid())
+  kasirId       String
+  waktuBuka     DateTime  @default(now())
+  waktuTutup    DateTime?
+  modalAwal     Int
+  kasSeharusnya Int?
+  kasAktual     Int?
+  selisih       Int?
+  status        String    @default("open") // "open" | "closed"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  kasir        User          @relation(fields: [kasirId], references: [id])
+  transactions Transaction[]
+
+  @@map("shifts")
+}
+
+// ─── Transactions ────────────────────────────────────────────
+model Transaction {
+  id         String    @id @default(uuid())
+  clientUuid String    @unique
+  shiftId    String
+  tableId    String?
+  tipeOrder  String    // "dine_in" | "take_away"
+  status     String    @default("paid") // "paid" | "void"
+  subtotal   Int
+  diskon     Int       @default(0)
+  pajak      Int       @default(0)
+  total      Int
+  catatan    String?
+  nomorAntrian String?
+  createdAt  DateTime
+  syncedAt   DateTime?
+  updatedAt  DateTime  @updatedAt
+
+  shift    Shift              @relation(fields: [shiftId], references: [id])
+  table    Table?             @relation(fields: [tableId], references: [id])
+  items    TransactionItem[]
+  payments Payment[]
+  discount Discount?          @relation(fields: [discountId], references: [id])
+  discountId String?
+
+  @@index([shiftId])
+  @@index([createdAt])
+  @@index([clientUuid])
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id            String  @id @default(uuid())
+  transactionId String
+  productId     String
+  variantId     String?
+  jumlah        Int
+  hargaSatuan   Int
+  hargaTotal    Int
+  catatan       String?
+
+  transaction Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product     Product         @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("transaction_items")
+}
+
+// ─── Payments ────────────────────────────────────────────────
+model Payment {
+  id                String  @id @default(uuid())
+  transactionId     String
+  metode            String  // "cash" | "qris" | "kartu"
+  jumlahDibayar     Int
+  kembalian         Int     @default(0)
+  referensiGateway  String?
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ─── Discounts ───────────────────────────────────────────────
+model Discount {
+  id          String    @id @default(uuid())
+  kodeVoucher String    @unique
+  tipe        String    // "persentase" | "nominal"
+  nilai       Int
+  minBelanja  Int       @default(0)
+  isActive    Boolean   @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  transactions Transaction[]
+
+  @@map("discounts")
+}
