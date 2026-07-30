@@ -5,7 +5,8 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { usePaymentGatewayStore } from './stores/paymentGatewayStore';
 import { initSyncEngine } from './lib/sync';
-import { AppLayout } from './components/layout/AppLayout';
+import { PosLayout } from './components/layout/PosLayout';
+import { DashboardLayout } from './components/layout/DashboardLayout';
 import LoginPage from './pages/LoginPage';
 import PosPage from './pages/PosPage';
 import MenuManagementPage from './pages/MenuManagementPage';
@@ -80,10 +81,11 @@ export default function App() {
             {/* Public Customer Self-Service Table Order */}
             <Route path="/order/:tableId" element={<PublicOrderPage />} />
 
+            {/* 1. Pos / Operational Layout */}
             <Route
               element={
                 <AuthGuard>
-                  <AppLayout />
+                  <PosLayout />
                 </AuthGuard>
               }
             >
@@ -92,72 +94,26 @@ export default function App() {
               <Route path="/shifts" element={<ShiftPage />} />
               <Route path="/history" element={<TransactionHistoryPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+            </Route>
 
-              {/* Super Admin / Manager routes */}
-              <Route
-                path="/dashboard"
-                element={
+            {/* 2. Executive Manager & SuperAdmin Layout */}
+            <Route
+              element={
+                <AuthGuard>
                   <AdminOrManagerGuard>
-                    <DashboardPage />
+                    <DashboardLayout />
                   </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/table-qr"
-                element={
-                  <AdminOrManagerGuard>
-                    <TableQrPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/users"
-                element={
-                  <AdminOrManagerGuard>
-                    <UserManagementPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/menu"
-                element={
-                  <AdminOrManagerGuard>
-                    <MenuManagementPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/tables"
-                element={
-                  <AdminOrManagerGuard>
-                    <TableManagementPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/discounts"
-                element={
-                  <AdminOrManagerGuard>
-                    <DiscountPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/reports"
-                element={
-                  <AdminOrManagerGuard>
-                    <ReportsPage />
-                  </AdminOrManagerGuard>
-                }
-              />
-              <Route
-                path="/payment-gateway"
-                element={
-                  <AdminOrManagerGuard>
-                    <PaymentGatewayPage />
-                  </AdminOrManagerGuard>
-                }
-              />
+                </AuthGuard>
+              }
+            >
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/table-qr" element={<TableQrPage />} />
+              <Route path="/users" element={<UserManagementPage />} />
+              <Route path="/menu" element={<MenuManagementPage />} />
+              <Route path="/tables" element={<TableManagementPage />} />
+              <Route path="/discounts" element={<DiscountPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/payment-gateway" element={<PaymentGatewayPage />} />
             </Route>
 
             <Route path="/" element={<RootRedirect />} />

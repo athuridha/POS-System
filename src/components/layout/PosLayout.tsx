@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { TopBar, PosSidebar } from './Navigation';
 
-export function AppLayout() {
+export function PosLayout() {
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden bg-zinc-100 font-sans">
       <TopBar />
