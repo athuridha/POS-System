@@ -136,6 +136,27 @@ export default function LoginPage() {
               <span>Masuk Ke Sistem</span>
             )}
           </button>
+
+          {/* Quick Demo Login Accounts */}
+          <div className="pt-3 border-t border-zinc-100 space-y-2">
+            <p className="text-[11px] font-extrabold text-center text-zinc-400 uppercase tracking-wider">Demo Akun Cepat</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => { setUsername('kasir'); setPassword('kasir123'); }}
+                className="py-2.5 px-3 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold transition-all text-center cursor-pointer active:scale-95"
+              >
+                Kasir
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername('superadmin'); setPassword('admin123'); }}
+                className="py-2.5 px-3 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-extrabold transition-all text-center cursor-pointer active:scale-95"
+              >
+                Manager / Admin
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>

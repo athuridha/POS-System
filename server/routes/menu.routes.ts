@@ -237,4 +237,7 @@ productsRouter.delete('/:id', authenticate, authorize('manager'), async (req: Au
   }
 });
 
-export { router as categoryRouter, productsRouter };
+export const menuRouter = {
+  categories: router,
+  products: productsRouter,
+};
