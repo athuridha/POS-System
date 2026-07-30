@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { prisma } from '../lib/prisma';
+import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 
 export const userRouter = Router();
@@ -30,10 +30,10 @@ userRouter.get('/', authenticate, authorize('super_admin', 'manager'), async (_r
 // ─── POST /api/users — create user (super_admin only) ─────────
 userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
   try {
-    const { email, password, nama, role } = req.body;
+    let { email, username, password, nama, role } = req.body;
 
-    if (!email || !password || !nama || !role) {
-      res.status(400).json({ error: 'Email, password, nama, dan role wajib diisi' });
+    if (!nama || !password || !role) {
+      res.status(400).json({ error: 'Nama, password, dan role wajib diisi' });
       return;
     }
 
@@ -42,9 +42,12 @@ userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthReq
       return;
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const cleanUsername = (username || email || nama).toLowerCase().replace(/\s+/g, '');
+    const userEmail = email || `${cleanUsername}@poscafe.id`;
+
+    const existing = await prisma.user.findUnique({ where: { email: userEmail } });
     if (existing) {
-      res.status(409).json({ error: 'Email sudah terdaftar' });
+      res.status(409).json({ error: 'Username/Email ini sudah terdaftar' });
       return;
     }
 
@@ -52,7 +55,7 @@ userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthReq
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: userEmail,
         passwordHash,
         nama,
         role,
@@ -69,31 +72,33 @@ userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthReq
 
     res.status(201).json({ user });
   } catch (err) {
-    console.error('Create user error:', err);
     res.status(500).json({ error: 'Gagal membuat user baru' });
   }
 });
 
-// ─── PUT /api/users/:id — update user (super_admin only) ──────
+// ─── PUT /api/users/:id — update status or user details ─────────
 userRouter.put('/:id', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { nama, role, isActive } = req.body;
+    const { isActive, nama, role, password } = req.body;
+
+    let updateData: any = {};
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (nama !== undefined) updateData.nama = nama;
+    if (role !== undefined) updateData.role = role;
+    if (password) {
+      updateData.passwordHash = await bcrypt.hash(password, 10);
+    }
 
     const user = await prisma.user.update({
       where: { id },
-      data: {
-        ...(nama !== undefined && { nama }),
-        ...(role !== undefined && { role }),
-        ...(isActive !== undefined && { isActive }),
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
         nama: true,
         role: true,
         isActive: true,
-        updatedAt: true,
       },
     });
 
@@ -103,7 +108,7 @@ userRouter.put('/:id', authenticate, authorize('super_admin'), async (req: AuthR
   }
 });
 
-// ─── POST /api/users/:id/reset-password (super_admin only) ──
+// ─── POST /api/users/:id/reset-password ───────────────────────
 userRouter.post('/:id/reset-password', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -121,8 +126,8 @@ userRouter.post('/:id/reset-password', authenticate, authorize('super_admin'), a
       data: { passwordHash },
     });
 
-    res.json({ message: 'Password berhasil di-reset' });
+    res.json({ message: 'Password berhasil direset' });
   } catch (err) {
-    res.status(500).json({ error: 'Gagal reset password' });
+    res.status(500).json({ error: 'Gagal mereset password' });
   }
 });

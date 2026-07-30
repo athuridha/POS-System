@@ -347,46 +347,44 @@ function ProductFormModal({
           </div>
 
           {/* Variants */}
-          {!product && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-zinc-700">Varian Produk</label>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-semibold text-zinc-700">Varian Produk</label>
+              <button
+                type="button"
+                onClick={() => setVariants([...variants, { namaVarian: '', hargaTambahan: '0' }])}
+                className="text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
+              >
+                + Tambah Varian
+              </button>
+            </div>
+
+            {variants.map((v, i) => (
+              <div key={i} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={v.namaVarian}
+                  onChange={(e) => { const nv = [...variants]; nv[i].namaVarian = e.target.value; setVariants(nv); }}
+                  placeholder="Nama varian (cth: Large)"
+                  className="flex-1 h-9 px-3 rounded-lg border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
+                />
+                <input
+                  type="number"
+                  value={v.hargaTambahan}
+                  onChange={(e) => { const nv = [...variants]; nv[i].hargaTambahan = e.target.value; setVariants(nv); }}
+                  placeholder="+0"
+                  className="w-28 h-9 px-3 rounded-lg border border-zinc-300 text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
+                />
                 <button
                   type="button"
-                  onClick={() => setVariants([...variants, { namaVarian: '', hargaTambahan: '0' }])}
-                  className="text-xs font-bold text-emerald-600 hover:underline cursor-pointer"
+                  onClick={() => setVariants(variants.filter((_, j) => j !== i))}
+                  className="p-1.5 text-zinc-400 hover:text-red-600 cursor-pointer"
                 >
-                  + Tambah Varian
+                  <X size={16} />
                 </button>
               </div>
-
-              {variants.map((v, i) => (
-                <div key={i} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={v.namaVarian}
-                    onChange={(e) => { const nv = [...variants]; nv[i].namaVarian = e.target.value; setVariants(nv); }}
-                    placeholder="Nama varian (cth: Large)"
-                    className="flex-1 h-9 px-3 rounded-lg border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
-                  />
-                  <input
-                    type="number"
-                    value={v.hargaTambahan}
-                    onChange={(e) => { const nv = [...variants]; nv[i].hargaTambahan = e.target.value; setVariants(nv); }}
-                    placeholder="+0"
-                    className="w-28 h-9 px-3 rounded-lg border border-zinc-300 text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setVariants(variants.filter((_, j) => j !== i))}
-                    className="p-1.5 text-zinc-400 hover:text-red-600 cursor-pointer"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
 
           <button
             type="submit"

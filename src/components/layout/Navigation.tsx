@@ -256,7 +256,7 @@ export function ExecutiveSidebar() {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-y-auto">
+    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-y-auto no-scrollbar">
       <div className="space-y-5">
         {/* Brand Header with Dynamic Cafe Settings */}
         <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">

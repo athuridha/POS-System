@@ -7,7 +7,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import type { AuthResponse } from '../types';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
+      const { data } = await api.post<AuthResponse>('/auth/login', { username, email: username, password });
       login(data.user, data.accessToken, data.refreshToken);
       if (data.user.role === 'kasir') {
         navigate('/pos');
@@ -71,15 +71,15 @@ export default function LoginPage() {
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="w-full space-y-4">
-          {/* Email / Username Input */}
+          {/* Username / Email Input */}
           <div className="relative">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600">
               <User size={18} weight="fill" />
             </div>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               placeholder="Username / Email"
               required
               className="w-full h-12 pl-11 pr-4 rounded-full bg-[#d4d4d8]/60 text-sm font-medium text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all border border-transparent focus:border-emerald-500"
@@ -108,67 +108,35 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Remember me & Forgot password row */}
-          <div className="flex items-center justify-between px-1 text-xs text-zinc-400 font-medium pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* Remember Me */}
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 text-xs font-semibold text-zinc-600 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                className="w-4 h-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 transition-colors"
               />
-              <span>Remember me</span>
+              <span>Ingat saya di perangkat ini</span>
             </label>
-            <button
-              type="button"
-              onClick={() => setError('Silakan hubungi Super Admin jika Anda lupa password')}
-              className="hover:underline text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
-            >
-              Forgot Password?
-            </button>
           </div>
 
-          {/* Submit LOGIN Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 mt-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-emerald-600/30 flex items-center justify-center"
+            className="w-full h-12 rounded-full bg-[#059669] hover:bg-[#047857] active:scale-[0.98] text-white font-bold text-sm transition-all shadow-lg shadow-emerald-700/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
-              <CircleNotch size={22} className="animate-spin text-white" />
+              <>
+                <CircleNotch size={18} className="animate-spin" />
+                <span>Memproses...</span>
+              </>
             ) : (
-              <span>LOGIN</span>
+              <span>Masuk Ke Sistem</span>
             )}
           </button>
         </form>
-
-        {/* Demo Credentials Quick Switcher */}
-        <div className="w-full mt-6 pt-4 border-t border-zinc-100 text-center">
-          <p className="text-[11px] font-semibold text-zinc-400 mb-2">Pilih akun cepat (Demo):</p>
-          <div className="flex justify-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => { setEmail('superadmin@poscafe.id'); setPassword('admin123'); }}
-              className="px-3 py-1 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-bold transition-all cursor-pointer border border-zinc-200"
-            >
-              Super Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => { setEmail('manager@poscafe.id'); setPassword('manager123'); }}
-              className="px-3 py-1 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-bold transition-all cursor-pointer border border-zinc-200"
-            >
-              Manager
-            </button>
-            <button
-              type="button"
-              onClick={() => { setEmail('kasir1@poscafe.id'); setPassword('kasir123'); }}
-              className="px-3 py-1 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[11px] font-bold transition-all cursor-pointer border border-zinc-200"
-            >
-              Kasir
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

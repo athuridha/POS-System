@@ -1,27 +1,31 @@
-import { Router, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { Router, Response } from 'react';
+import { Router as ExpressRouter } from 'express';
+import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 
-const categoriesRouter = Router();
-const productsRouter = Router();
+const router = ExpressRouter();
 
 // ═══════════════════════════════════════════════════════════════
 //  CATEGORIES
 // ═══════════════════════════════════════════════════════════════
 
-// GET /api/categories — list all categories with products (public for kasir cache)
-categoriesRouter.get('/', authenticate, async (_req: AuthRequest, res: Response) => {
+// GET /api/categories — list all categories with their products & variants
+router.get('/categories', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
       include: {
         products: {
           where: { isActive: true },
-          include: { variants: { where: { isActive: true } } },
+          include: {
+            variants: {
+              where: { isActive: true },
+            },
+          },
           orderBy: { namaProduk: 'asc' },
         },
       },
-      orderBy: { urutan: 'asc' },
+      orderBy: { namaKategori: 'asc' },
     });
 
     res.json({ categories });
@@ -31,17 +35,16 @@ categoriesRouter.get('/', authenticate, async (_req: AuthRequest, res: Response)
 });
 
 // POST /api/categories — create category (manager only)
-categoriesRouter.post('/', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+router.post('/categories', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
-    const { namaKategori, urutan } = req.body;
-
+    const { namaKategori } = req.body;
     if (!namaKategori) {
-      res.status(400).json({ error: 'Nama kategori wajib diisi' });
+      res.status(400).json({ error: 'namaKategori wajib diisi' });
       return;
     }
 
     const category = await prisma.category.create({
-      data: { namaKategori, urutan: urutan || 0 },
+      data: { namaKategori },
     });
 
     res.status(201).json({ category });
@@ -51,18 +54,14 @@ categoriesRouter.post('/', authenticate, authorize('manager'), async (req: AuthR
 });
 
 // PUT /api/categories/:id — update category (manager only)
-categoriesRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+router.put('/categories/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { namaKategori, urutan, isActive } = req.body;
+    const { namaKategori } = req.body;
 
     const category = await prisma.category.update({
       where: { id },
-      data: {
-        ...(namaKategori !== undefined && { namaKategori }),
-        ...(urutan !== undefined && { urutan }),
-        ...(isActive !== undefined && { isActive }),
-      },
+      data: { namaKategori },
     });
 
     res.json({ category });
@@ -72,10 +71,11 @@ categoriesRouter.put('/:id', authenticate, authorize('manager'), async (req: Aut
 });
 
 // DELETE /api/categories/:id — soft delete category (manager only)
-categoriesRouter.delete('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+router.delete('/categories/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Soft delete category
     await prisma.category.update({
       where: { id },
       data: { isActive: false },
@@ -98,6 +98,8 @@ categoriesRouter.delete('/:id', authenticate, authorize('manager'), async (req: 
 // ═══════════════════════════════════════════════════════════════
 
 // GET /api/products — list all products with variants
+const productsRouter = ExpressRouter();
+
 productsRouter.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const { categoryId, includeInactive } = req.query;
@@ -176,13 +178,13 @@ productsRouter.post('/', authenticate, authorize('manager'), async (req: AuthReq
   }
 });
 
-// PUT /api/products/:id — update product (manager only)
+// PUT /api/products/:id — update product & variants (manager only)
 productsRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { namaProduk, categoryId, hargaDasar, imageUrl, deskripsi, isActive } = req.body;
+    const { namaProduk, categoryId, hargaDasar, imageUrl, deskripsi, isActive, variants } = req.body;
 
-    const product = await prisma.product.update({
+    await prisma.product.update({
       where: { id },
       data: {
         ...(namaProduk !== undefined && { namaProduk }),
@@ -192,91 +194,47 @@ productsRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthR
         ...(deskripsi !== undefined && { deskripsi }),
         ...(isActive !== undefined && { isActive }),
       },
+    });
+
+    // Sync variants if provided
+    if (variants && Array.isArray(variants)) {
+      await prisma.productVariant.deleteMany({ where: { productId: id } });
+      if (variants.length > 0) {
+        await prisma.productVariant.createMany({
+          data: variants.map((v: { namaVarian: string; hargaTambahan: number }) => ({
+            productId: id,
+            namaVarian: v.namaVarian,
+            hargaTambahan: v.hargaTambahan || 0,
+          })),
+        });
+      }
+    }
+
+    const updatedProduct = await prisma.product.findUnique({
+      where: { id },
       include: { variants: true, category: true },
     });
 
-    res.json({ product });
+    res.json({ product: updatedProduct });
   } catch (err) {
     res.status(500).json({ error: 'Gagal mengupdate produk' });
   }
 });
 
-// DELETE /api/products/:id — soft delete (manager only)
+// DELETE /api/products/:id — soft delete product (manager only)
 productsRouter.delete('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
+    const { id } = req.params;
+
     await prisma.product.update({
-      where: { id: req.params.id },
+      where: { id },
       data: { isActive: false },
     });
 
-    res.json({ message: 'Produk berhasil dinonaktifkan' });
+    res.json({ message: 'Produk berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ error: 'Gagal menghapus produk' });
   }
 });
 
-// ─── Product Variants ────────────────────────────────────────
-
-// POST /api/products/:id/variants — add variant
-productsRouter.post('/:id/variants', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
-  try {
-    const { namaVarian, hargaTambahan } = req.body;
-
-    if (!namaVarian) {
-      res.status(400).json({ error: 'Nama varian wajib diisi' });
-      return;
-    }
-
-    const variant = await prisma.productVariant.create({
-      data: {
-        productId: req.params.id,
-        namaVarian,
-        hargaTambahan: hargaTambahan || 0,
-      },
-    });
-
-    res.status(201).json({ variant });
-  } catch (err) {
-    res.status(500).json({ error: 'Gagal menambah varian' });
-  }
-});
-
-// PUT /api/products/:productId/variants/:variantId
-productsRouter.put('/:productId/variants/:variantId', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
-  try {
-    const { variantId } = req.params;
-    const { namaVarian, hargaTambahan, isActive } = req.body;
-
-    const variant = await prisma.productVariant.update({
-      where: { id: variantId },
-      data: {
-        ...(namaVarian !== undefined && { namaVarian }),
-        ...(hargaTambahan !== undefined && { hargaTambahan }),
-        ...(isActive !== undefined && { isActive }),
-      },
-    });
-
-    res.json({ variant });
-  } catch (err) {
-    res.status(500).json({ error: 'Gagal mengupdate varian' });
-  }
-});
-
-// DELETE /api/products/:productId/variants/:variantId
-productsRouter.delete('/:productId/variants/:variantId', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
-  try {
-    await prisma.productVariant.update({
-      where: { id: req.params.variantId },
-      data: { isActive: false },
-    });
-
-    res.json({ message: 'Varian berhasil dinonaktifkan' });
-  } catch (err) {
-    res.status(500).json({ error: 'Gagal menghapus varian' });
-  }
-});
-
-export const menuRouter = {
-  categories: categoriesRouter,
-  products: productsRouter,
-};
+export { router as categoryRouter, productsRouter };

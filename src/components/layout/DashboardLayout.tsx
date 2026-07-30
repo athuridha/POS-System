@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { ExecutiveSidebar, MobileDrawer } from './Navigation';
 import {
@@ -21,11 +21,11 @@ export function DashboardLayout() {
 
   return (
     <div className="h-[100dvh] max-h-[100dvh] bg-[#c5d0d8] p-4 sm:p-6 lg:p-8 flex gap-6 font-sans overflow-hidden">
-      {/* ── 1. Floating Left Executive Sidebar ── */}
+      {/* ── 1. Floating Left Executive Sidebar (Ultra Clean No Scrollbar Strip) ── */}
       <ExecutiveSidebar />
 
       {/* ── 2. Independent Scrollable Content Area ── */}
-      <div className="flex-1 h-full overflow-y-auto min-w-0 space-y-6 pr-1">
+      <div className="flex-1 h-full overflow-y-auto no-scrollbar min-w-0 space-y-6 pr-1">
         {/* ── Top Bar Card (Search, Date Filter, Online Status, User Profile & Logout) ── */}
         <header className="bg-white rounded-[2rem] p-3.5 px-6 shadow-sm border border-white flex items-center justify-between gap-4 flex-wrap shrink-0">
           {/* Mobile Hamburger + Search Input */}
@@ -104,7 +104,7 @@ export function DashboardLayout() {
             )}
           </div>
 
-          {/* Online Status + User Profile & Logout Button (In Top Bar!) */}
+          {/* Online Status + User Profile & Logout Button */}
           <div className="flex items-center gap-3">
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold border ${

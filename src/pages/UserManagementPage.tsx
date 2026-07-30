@@ -184,6 +184,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function CreateUserModal({ onClose }: { onClose: () => void }) {
   const [nama, setNama] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'manager' | 'kasir'>('kasir');
@@ -192,7 +193,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      await api.post('/users', { nama, email, password, role });
+      await api.post('/users', { nama, username, email, password, role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-manage'] });
@@ -228,16 +229,27 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="andi@poscafe.id"
-              className="w-full h-11 px-3.5 rounded-xl border border-zinc-300 bg-white text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-zinc-700 mb-1">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="andi"
+                className="w-full h-11 px-3.5 rounded-xl border border-zinc-300 bg-white text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-zinc-700 mb-1">Email <span className="text-zinc-400 text-xs font-normal">(Opsional)</span></label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="andi@poscafe.id"
+                className="w-full h-11 px-3.5 rounded-xl border border-zinc-300 bg-white text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+              />
+            </div>
           </div>
 
           <div>
