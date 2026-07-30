@@ -5,10 +5,9 @@ import {
   CircleNotch,
   Clock,
   CaretRight,
+  CaretLeft,
   Check,
   X,
-  ChatCircleText,
-  FileText,
   CaretDown,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
@@ -60,6 +59,10 @@ export default function DashboardPage() {
     setCarouselIndex((prev) => (prev + 1) % Math.max(1, activeOrders.length));
   };
 
+  const handlePrevCarousel = () => {
+    setCarouselIndex((prev) => (prev - 1 + activeOrders.length) % Math.max(1, activeOrders.length));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-[600px] flex items-center justify-center p-6 font-sans">
@@ -72,7 +75,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ── 1. "Last tasks" Main Card (Exact BRESS 1-to-1) ── */}
+      {/* ── 1. "Last tasks" Main Card (Executive Sales & Tasks Overview) ── */}
       <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white space-y-6">
         {/* Card Header with Big Numbers */}
         <div className="flex items-start justify-between flex-wrap gap-4 border-b border-zinc-100 pb-6">
@@ -162,19 +165,19 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 2. Bottom Row Grid (2 Columns matching BRESS 1-to-1) ── */}
+      {/* ── 2. Bottom Row Grid (Peak Hours Performance Chart + Live Order Kitchen Stream) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        {/* Left Card: "Productivity" Chart Widget (7 Columns) */}
+        {/* Left Card: "Peak Hours Performance" Chart Widget (7 Columns) */}
         <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white flex flex-col justify-between space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Productivity</h2>
+              <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Peak Hours Performance</h2>
               <div className="flex items-center gap-4 text-xs mt-1 font-bold">
                 <span className="flex items-center gap-1.5 text-sky-500">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> Research
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> Volume Stream
                 </span>
                 <span className="flex items-center gap-1.5 text-purple-600">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" /> Design
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" /> Revenue Peak
                 </span>
               </div>
             </div>
@@ -188,10 +191,10 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* SVG Line Graph matching BRESS */}
+          {/* SVG Line Graph */}
           <div className="relative pt-6 pb-2">
             <div className="absolute top-0 left-[48%] -translate-x-1/2 bg-[#0f172a] text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow-xl flex items-center gap-1 z-10">
-              <span>3h 10m</span>
+              <span>3h 10m (Peak: 14:00)</span>
             </div>
 
             <svg className="w-full h-44 overflow-visible" viewBox="0 0 500 150" fill="none">
@@ -219,88 +222,110 @@ export default function DashboardPage() {
               />
             </svg>
 
-            <div className="flex justify-between text-xs font-bold text-zinc-400 mt-2 px-1">
-              <span>Mon</span>
-              <span>Tue</span>
-              <span>Wed</span>
-              <span className="text-zinc-900 font-extrabold">Thu</span>
-              <span>Fri</span>
-              <span>Sat</span>
-              <span>Sun</span>
+            <div className="flex justify-between text-xs font-bold text-zinc-400 mt-2 px-1 font-mono">
+              <span>08:00</span>
+              <span>11:00</span>
+              <span className="text-zinc-900 font-extrabold">14:00</span>
+              <span>17:00</span>
+              <span>20:00</span>
+              <span>22:00</span>
             </div>
           </div>
         </div>
 
-        {/* Right Card: "Projects in progress:" Dark Midnight Card (5 Columns) */}
+        {/* Right Card: Live Order & Kitchen Activity Stream (5 Columns) */}
         <div className="lg:col-span-5 bg-[#0d1527] text-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl flex flex-col justify-between relative overflow-hidden min-h-[320px]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-4 z-10">
-            <h2 className="text-xl font-extrabold text-white tracking-tight">Projects in progress:</h2>
+            <div>
+              <h2 className="text-xl font-extrabold text-white tracking-tight">Live Order Stream</h2>
+              <p className="text-[11px] text-slate-400 font-semibold">Kitchen & table activity stack</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handlePrevCarousel}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                title="Sebelumnya"
+              >
+                <CaretLeft size={16} weight="bold" />
+              </button>
+              <button
+                onClick={handleNextCarousel}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                title="Berikutnya"
+              >
+                <CaretRight size={16} weight="bold" />
+              </button>
+            </div>
           </div>
 
-          {/* Stacked Cards Layout matching BRESS Right Dark Card */}
+          {/* Stacked Cards Layout displaying real live active orders */}
           <div className="my-4 relative flex items-center justify-between gap-4">
             {activeCard ? (
               <div
                 onClick={() => setSelectedTx(activeCard)}
-                className="w-full bg-white text-zinc-900 rounded-3xl p-5 shadow-2xl border border-white space-y-4 relative z-10 cursor-pointer hover:scale-[1.01] transition-transform"
+                className="w-full bg-white text-zinc-900 rounded-3xl p-5 shadow-2xl border border-white space-y-3.5 relative z-10 cursor-pointer hover:scale-[1.01] transition-transform"
               >
-                {/* Pill Badges */}
-                <div className="flex items-center gap-2 flex-wrap text-[11px] font-extrabold">
-                  <span className="px-3 py-1 rounded-full bg-[#dcfce7] text-emerald-800">
-                    Feedback
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#dcfce7] text-emerald-800">
-                    Bug
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-[#f3e8ff] text-purple-800">
-                    Design System
+                {/* Pill Badges (Meja/Order Type, Status) */}
+                <div className="flex items-center justify-between flex-wrap gap-2 text-[11px] font-extrabold">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      {activeCard.table?.nomorMeja ? `Meja ${activeCard.table.nomorMeja}` : activeCard.tipeOrder === 'dine_in' ? 'Dine In' : 'Take Away'}
+                    </span>
+                    {activeCard.status === 'paid' ? (
+                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                        Selesai
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                        Belum Dibayar
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-zinc-400 font-mono font-medium">
+                    {formatDateTime(activeCard.createdAt).split(',')[1] || 'Just now'}
                   </span>
                 </div>
 
-                {/* Card Title */}
+                {/* Order Name & Main Items Preview */}
                 <div>
                   <h3 className="text-base font-extrabold text-zinc-900 tracking-tight">
-                    Improve cards readability
+                    Order #{shortId(activeCard.clientUuid)}
                   </h3>
-                  <p className="text-xs text-zinc-400 font-mono mt-0.5">21.03.22</p>
+                  <p className="text-xs text-zinc-500 font-semibold line-clamp-1 mt-0.5">
+                    {activeCard.items?.map((i) => `${i.jumlah}x ${i.product?.namaProduk || 'Item'}`).join(', ') || '3 items order'}
+                  </p>
                 </div>
 
                 {/* Micro Meta Footer */}
                 <div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
-                  <div className="flex items-center -space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-purple-200 border-2 border-white flex items-center justify-center font-extrabold text-[10px] text-purple-900">
-                      A
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center font-black text-[10px] text-amber-900">
+                      {activeCard.shift?.kasir?.nama ? activeCard.shift.kasir.nama.charAt(0) : 'K'}
                     </div>
-                    <div className="w-6 h-6 rounded-full bg-[#0f172a] text-white border-2 border-white flex items-center justify-center font-extrabold text-[9px]">
-                      +8
-                    </div>
+                    <span className="text-xs font-bold text-zinc-700 truncate max-w-[100px]">
+                      {activeCard.shift?.kasir?.nama || 'Kasir'}
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-3 text-zinc-500 font-bold">
-                    <span className="flex items-center gap-1">
-                      <ChatCircleText size={14} />
-                      <span>12 comments</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <FileText size={14} />
-                      <span>0 files</span>
-                    </span>
+                  <div className="flex items-center gap-3 font-mono font-black text-emerald-600 text-sm">
+                    {formatRupiah(activeCard.total)}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center text-slate-400 text-xs py-8">No active projects</div>
+              <div className="text-center text-slate-400 text-xs py-8 w-full">Tidak ada antrean pesanan aktif</div>
             )}
 
             {/* Sliding Stacked Card Backing Layers */}
             <div className="absolute top-2 left-4 right-8 h-full bg-slate-800/80 rounded-3xl -z-10 scale-[0.96]" />
             <div className="absolute top-4 left-8 right-12 h-full bg-slate-800/50 rounded-3xl -z-20 scale-[0.92]" />
 
-            {/* Next Arrow Floating Circle Button */}
+            {/* Floating Action Arrow */}
             <button
               onClick={handleNextCarousel}
               className="w-10 h-10 rounded-full bg-white text-zinc-900 shadow-xl flex items-center justify-center hover:bg-zinc-100 transition-colors shrink-0 z-20 cursor-pointer border border-zinc-200 ml-2"
+              title="Pesanan Berikutnya"
             >
               <CaretRight size={18} weight="bold" />
             </button>
