@@ -25,7 +25,11 @@ export default function LoginPage() {
     try {
       const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
       login(data.user, data.accessToken, data.refreshToken);
-      navigate('/pos');
+      if (data.user.role === 'kasir') {
+        navigate('/pos');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Gagal login. Cek koneksi server.');
     } finally {

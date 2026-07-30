@@ -69,7 +69,7 @@ export interface Shift {
 // ─── Transaction ─────────────────────────────────────────────
 export type TipeOrder = 'dine_in' | 'take_away';
 export type MetodePembayaran = 'cash' | 'qris' | 'kartu';
-export type TransactionStatus = 'paid' | 'void';
+export type TransactionStatus = 'paid' | 'unpaid' | 'void';
 
 export interface TransactionItem {
   id?: string;

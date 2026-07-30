@@ -238,7 +238,7 @@ const superAdminNav = [
 ];
 
 export function Sidebar() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const location = useLocation();
 
   const navItems =
@@ -249,27 +249,66 @@ export function Sidebar() {
       : kasirNav;
 
   return (
-    <aside className="hidden lg:flex w-52 border-r border-zinc-200 bg-white flex-col py-3 shrink-0">
-      <nav className="flex flex-col gap-1 px-2">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + '/');
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                isActive
-                  ? 'bg-emerald-50 text-emerald-700 shadow-xs'
-                  : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-              }`}
+    <aside className="hidden lg:flex w-60 bg-[#dce3ea] p-4 flex-col justify-between shrink-0 font-sans">
+      {/* Floating Card Sidebar Panel */}
+      <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-4 shadow-sm border border-white/80 flex flex-col justify-between flex-1 space-y-6">
+        <div>
+          {/* Logo / Brand Header */}
+          <div className="flex items-center gap-3 px-3 py-2 mb-4 border-b border-zinc-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-[#0f172a] flex items-center justify-center text-white font-black text-base shadow-sm">
+              POS
+            </div>
+            <div>
+              <h2 className="font-extrabold text-sm text-zinc-900 tracking-tight">POS CAFE</h2>
+              <p className="text-[11px] font-bold text-emerald-600 capitalize">{user?.role?.replace('_', ' ') || 'Kasir'}</p>
+            </div>
+          </div>
+
+          {/* Navigation Items with BRESS Dark Pill for Active */}
+          <nav className="flex flex-col gap-1.5">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? 'bg-[#0f172a] text-white shadow-md shadow-slate-900/20 translate-x-1'
+                      : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+                  }`}
+                >
+                  <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* User Profile Pill at Bottom (Matching BRESS Design) */}
+        {user && (
+          <div className="pt-3 border-t border-zinc-100 flex items-center justify-between px-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800 font-bold text-xs shrink-0">
+                {user.nama.charAt(0)}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-zinc-900 truncate">{user.nama}</p>
+                <p className="text-[10px] text-zinc-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => logout()}
+              title="Logout"
+              className="p-1.5 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
             >
-              <Icon size={20} weight={isActive ? 'fill' : 'regular'} className={isActive ? 'text-emerald-600' : 'text-zinc-500'} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+              <SignOut size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

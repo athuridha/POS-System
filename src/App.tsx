@@ -63,6 +63,12 @@ function AppInit({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RootRedirect() {
+  const { user } = useAuthStore();
+  if (user?.role === 'kasir') return <Navigate to="/pos" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -154,7 +160,8 @@ export default function App() {
               />
             </Route>
 
-            <Route path="*" element={<Navigate to="/pos" replace />} />
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="*" element={<RootRedirect />} />
           </Routes>
         </AppInit>
       </BrowserRouter>
