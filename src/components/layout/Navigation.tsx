@@ -224,23 +224,22 @@ export function PosSidebar() {
   );
 }
 
-// ── 2. ExecutiveSidebar (Matching BRESS Reference Image 1-to-1) ──
+// ── 2. ExecutiveSidebar (Matching BRESS Layout with Dynamic Cafe Settings) ──
 export function ExecutiveSidebar() {
   const { user, logout } = useAuthStore();
+  const { namaCafe, logoUrl } = useSettingsStore();
   const location = useLocation();
 
   const userRole = user?.role || 'kasir';
   const allNavItems = navGroups.flatMap((g) => g.items).filter((item) => !item.roles || item.roles.includes(userRole as any));
 
   return (
-    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans min-h-[calc(100vh-4rem)]">
+    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-hidden">
       <div className="space-y-6">
-        {/* Brand Header matching BRESS (Logo + BRESS / POS CAFE) */}
+        {/* Brand Header with Dynamic Cafe Settings */}
         <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">
-          <div className="w-9 h-9 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-sm shadow-sm">
-            B
-          </div>
-          <span className="font-extrabold text-xl text-zinc-900 tracking-tight">BRESS</span>
+          <img src={logoUrl || '/logo.png'} alt={namaCafe} className="w-9 h-9 rounded-xl object-cover border border-zinc-200 shadow-xs" />
+          <span className="font-extrabold text-lg text-zinc-900 tracking-tight truncate">{namaCafe || 'POS CAFE'}</span>
         </div>
 
         {/* Navigation Items with BRESS Dark Pill Active Indicator */}

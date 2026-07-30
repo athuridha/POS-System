@@ -25,6 +25,8 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [dateFilter, setDateFilter] = useState<'today' | '7days' | '30days' | 'all'>('all');
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
   const { user } = useAuthStore();
 
   const { data, isLoading } = useQuery({
@@ -38,18 +40,38 @@ export default function DashboardPage() {
 
   const transactions: Transaction[] = data?.transactions || [];
 
+  // Filter transactions dynamically based on active date range
+  const dateFilteredTx = useMemo(() => {
+    const now = new Date();
+    return transactions.filter((t) => {
+      const txDate = new Date(t.createdAt);
+      if (dateFilter === 'today') {
+        return txDate.toDateString() === now.toDateString();
+      }
+      if (dateFilter === '7days') {
+        const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+        return diffDays <= 7;
+      }
+      if (dateFilter === '30days') {
+        const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
+        return diffDays <= 30;
+      }
+      return true;
+    });
+  }, [transactions, dateFilter]);
+
   const paidTx = useMemo(() => {
-    return transactions.filter((t) => t.status === 'paid');
-  }, [transactions]);
+    return dateFilteredTx.filter((t) => t.status === 'paid');
+  }, [dateFilteredTx]);
 
   const unpaidTx = useMemo(() => {
-    return transactions.filter((t) => t.status === 'unpaid');
-  }, [transactions]);
+    return dateFilteredTx.filter((t) => t.status === 'unpaid');
+  }, [dateFilteredTx]);
 
   const filteredTx = useMemo(() => {
-    if (!searchQuery) return transactions.slice(0, 5);
+    if (!searchQuery) return dateFilteredTx.slice(0, 5);
     const q = searchQuery.toLowerCase();
-    return transactions
+    return dateFilteredTx
       .filter(
         (t) =>
           t.clientUuid.toLowerCase().includes(q) ||
@@ -57,11 +79,11 @@ export default function DashboardPage() {
           (t.table?.nomorMeja && t.table.nomorMeja.toLowerCase().includes(q))
       )
       .slice(0, 5);
-  }, [transactions, searchQuery]);
+  }, [dateFilteredTx, searchQuery]);
 
   const activeOrders = useMemo(() => {
-    return transactions.slice(0, 6);
-  }, [transactions]);
+    return dateFilteredTx.slice(0, 6);
+  }, [dateFilteredTx]);
 
   const handleNextCarousel = () => {
     setCarouselIndex((prev) => (prev + 1) % Math.max(1, activeOrders.length));
@@ -83,7 +105,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ── 1. Top Search Header Card (Exact BRESS Search Bar) ── */}
+      {/* ── 1. Top Search Header Card (Exact BRESS Search Bar with Functional Date Selector) ── */}
       <div className="bg-white rounded-[2rem] p-4 px-6 shadow-sm border border-white flex items-center justify-between gap-4 flex-wrap">
         {/* Search Bar Input */}
         <div className="relative flex-1 min-w-[220px]">
@@ -97,14 +119,65 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Date Selector Dropdown */}
-        <div className="flex items-center gap-2 text-xs font-bold text-zinc-600 bg-[#f1f5f9]/70 px-4 py-2.5 rounded-full border border-transparent hover:bg-zinc-200/50 transition-colors cursor-pointer">
-          <CalendarBlank size={16} className="text-zinc-400" />
-          <span>Monday, 6th March</span>
-          <CaretDown size={12} className="text-zinc-400 ml-1" />
+        {/* Date Selector Dropdown Button & Interactive Range Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDateDropdown(!showDateDropdown)}
+            className="flex items-center gap-2 text-xs font-bold text-zinc-700 bg-[#f1f5f9]/70 px-4 py-2.5 rounded-full border border-transparent hover:bg-zinc-200/50 transition-colors cursor-pointer"
+          >
+            <CalendarBlank size={16} className="text-zinc-500" />
+            <span>
+              {dateFilter === 'today'
+                ? `Hari Ini (${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`
+                : dateFilter === '7days'
+                ? '7 Hari Terakhir'
+                : dateFilter === '30days'
+                ? '30 Hari Terakhir'
+                : 'Semua Waktu'}
+            </span>
+            <CaretDown size={12} className={`text-zinc-400 transition-transform ${showDateDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Interactive Date Filter Dropdown */}
+          {showDateDropdown && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-zinc-100 py-2 z-30 font-sans animate-fade-in">
+              <button
+                onClick={() => { setDateFilter('today'); setShowDateDropdown(false); }}
+                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                  dateFilter === 'today' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                Hari Ini
+              </button>
+              <button
+                onClick={() => { setDateFilter('7days'); setShowDateDropdown(false); }}
+                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                  dateFilter === '7days' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                7 Hari Terakhir
+              </button>
+              <button
+                onClick={() => { setDateFilter('30days'); setShowDateDropdown(false); }}
+                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                  dateFilter === '30days' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                30 Hari Terakhir
+              </button>
+              <button
+                onClick={() => { setDateFilter('all'); setShowDateDropdown(false); }}
+                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
+                  dateFilter === 'all' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                Semua Waktu
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* User Profile Info & Status (Replacing removed Card/List toggle) */}
+        {/* User Profile Info & Status */}
         <div className="flex items-center gap-3 border-l border-zinc-100 pl-4">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200/60">
             <WifiHigh size={14} weight="bold" />
@@ -126,18 +199,18 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight">Last tasks</h1>
             <p className="text-xs sm:text-sm font-semibold text-zinc-400 mt-1">
-              <span className="font-bold text-zinc-800">{transactions.length} total</span>, proceed to resolve them
+              <span className="font-bold text-zinc-800">{dateFilteredTx.length} total</span>, proceed to resolve them
             </p>
           </div>
 
           <div className="flex items-center gap-6 sm:gap-8">
             <div className="text-center sm:text-right">
-              <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{paidTx.length || 94}</p>
+              <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{paidTx.length}</p>
               <p className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider mt-0.5">Done</p>
             </div>
             <div className="h-10 w-px bg-zinc-200/80" />
             <div className="text-center sm:text-right">
-              <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{unpaidTx.length || 23}</p>
+              <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{unpaidTx.length}</p>
               <p className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider mt-0.5">In progress</p>
             </div>
           </div>
