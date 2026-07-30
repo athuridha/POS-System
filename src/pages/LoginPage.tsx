@@ -137,23 +137,30 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Quick Demo Login Accounts */}
+          {/* Quick Demo Login Accounts (3 Separate Role Buttons) */}
           <div className="pt-3 border-t border-zinc-100 space-y-2">
             <p className="text-[11px] font-extrabold text-center text-zinc-400 uppercase tracking-wider">Demo Akun Cepat</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
-                onClick={() => { setUsername('kasir'); setPassword('kasir123'); }}
-                className="py-2.5 px-3 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-extrabold transition-all text-center cursor-pointer active:scale-95"
+                onClick={() => { setUsername('kasir1'); setPassword('kasir123'); }}
+                className="py-2 px-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
               >
                 Kasir
               </button>
               <button
                 type="button"
-                onClick={() => { setUsername('superadmin'); setPassword('admin123'); }}
-                className="py-2.5 px-3 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-extrabold transition-all text-center cursor-pointer active:scale-95"
+                onClick={() => { setUsername('manager'); setPassword('manager123'); }}
+                className="py-2 px-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
               >
-                Manager / Admin
+                Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => { setUsername('superadmin'); setPassword('admin123'); }}
+                className="py-2 px-2 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
+              >
+                Super Admin
               </button>
             </div>
           </div>
