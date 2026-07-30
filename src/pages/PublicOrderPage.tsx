@@ -143,10 +143,9 @@ export default function PublicOrderPage() {
           hargaTotal: i.hargaSatuan * i.jumlah,
           catatan: i.catatan || null,
         })),
-        payments: [{ metode: 'cash', jumlahDibayar: total, kembalian: 0 }],
       };
 
-      const { data } = await api.post('/transactions', payload);
+      const { data } = await api.post('/transactions/public', payload);
       setPlacedOrder(data.transaction || { clientUuid, total });
       setCartItems([]);
       setShowCartDrawer(false);

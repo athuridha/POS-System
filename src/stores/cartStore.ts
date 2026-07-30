@@ -9,6 +9,7 @@ interface CartState {
   discountId: string | null;
   discountAmount: number;
   clientUuid: string;
+  unpaidTxId: string | null;
 
   // Actions
   addItem: (item: Omit<CartItem, 'jumlah'>) => void;
@@ -18,6 +19,7 @@ interface CartState {
   setTipeOrder: (tipe: TipeOrder) => void;
   setTableId: (tableId: string | null) => void;
   setDiscount: (discountId: string | null, amount: number) => void;
+  setUnpaidTxId: (unpaidTxId: string | null) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getTotal: () => number;
@@ -34,6 +36,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   discountId: null,
   discountAmount: 0,
   clientUuid: uuidv4(),
+  unpaidTxId: null,
 
   addItem: (item) => {
     set((state) => {
@@ -80,6 +83,7 @@ export const useCartStore = create<CartState>((set, get) => ({
   setTipeOrder: (tipeOrder) => set({ tipeOrder }),
   setTableId: (tableId) => set({ tableId }),
   setDiscount: (discountId, discountAmount) => set({ discountId, discountAmount }),
+  setUnpaidTxId: (unpaidTxId) => set({ unpaidTxId }),
 
   clearCart: () =>
     set({
@@ -89,6 +93,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       discountId: null,
       discountAmount: 0,
       clientUuid: uuidv4(), // Generate fresh UUID for next transaction
+      unpaidTxId: null,
     }),
 
   getSubtotal: () => {

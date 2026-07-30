@@ -1,12 +1,12 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { MagnifyingGlass, Plus, Minus, Trash, ShoppingCart, ArrowRight, Coffee, X, Tag, Check, WarningCircle } from '@phosphor-icons/react';
+import { MagnifyingGlass, Plus, Minus, Trash, ShoppingCart, ArrowRight, Coffee, X, Tag, Check, WarningCircle, Receipt, Clock, Sparkle } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { getCachedMenu, cacheMenu } from '../lib/db';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
-import { formatRupiah } from '../lib/utils';
+import { formatRupiah, shortId } from '../lib/utils';
 import type { Category, Shift, Discount } from '../types';
 import PaymentModal from '../components/pos/PaymentModal';
 import ShiftGuard from '../components/pos/ShiftGuard';
@@ -17,6 +17,7 @@ export default function PosPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [showMobileCart, setShowMobileCart] = useState(false);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
   const [activeShift, setActiveShift] = useState<Shift | null>(null);
 
   const {
@@ -34,6 +35,8 @@ export default function PosPage() {
     discountId,
     discountAmount,
     setDiscount,
+    setUnpaidTxId,
+    clearCart,
   } = useCartStore();
 
   // Fetch categories with products
@@ -69,6 +72,37 @@ export default function PosPage() {
       return data.discounts;
     },
   });
+
+  // Fetch unpaid QR orders
+  const { data: unpaidData } = useQuery({
+    queryKey: ['unpaid-transactions'],
+    queryFn: async () => {
+      const { data } = await api.get('/transactions?status=unpaid');
+      return data;
+    },
+    refetchInterval: 4000,
+  });
+
+  const unpaidTransactions = unpaidData?.transactions || [];
+
+  const handleProcessUnpaidOrder = (tx: any) => {
+    clearCart();
+    (tx.items || []).forEach((item: any) => {
+      addItem({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        namaProduk: item.product?.namaProduk || 'Produk',
+        namaVarian: item.variant?.namaVarian,
+        hargaSatuan: item.hargaSatuan,
+        catatan: item.catatan,
+      });
+    });
+    setTipeOrder(tx.tipeOrder || 'dine_in');
+    setTableId(tx.tableId || null);
+    setUnpaidTxId(tx.id);
+    setShowUnpaidModal(false);
+    setShowPayment(true);
+  };
 
   // Deduplicate categories by name
   const uniqueCategories = useMemo(() => {
@@ -326,16 +360,35 @@ export default function PosPage() {
       <div className="flex-1 flex flex-col overflow-hidden pb-16 lg:pb-0">
         {/* Search + Category Filter */}
         <div className="p-3 sm:p-4 bg-white border-b border-zinc-200 space-y-3">
-          {/* Search */}
-          <div className="relative">
-            <MagnifyingGlass size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="Cari menu..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 rounded-xl border border-zinc-300 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
-            />
+          {/* Search Bar + Unpaid QR Orders Button */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <MagnifyingGlass size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Cari menu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-xl border border-zinc-300 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+              />
+            </div>
+
+            <button
+              onClick={() => setShowUnpaidModal(true)}
+              className={`h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border ${
+                unpaidTransactions.length > 0
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm'
+                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200'
+              }`}
+            >
+              <Receipt size={18} weight="bold" />
+              <span className="hidden sm:inline">Pesanan Belum Dibayar</span>
+              {unpaidTransactions.length > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-white text-amber-700 text-[10px] font-extrabold animate-pulse">
+                  {unpaidTransactions.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* Category tabs */}
@@ -475,6 +528,69 @@ export default function PosPage() {
           }}
           onClose={() => setShowVoucherModal(false)}
         />
+      )}
+
+      {/* Unpaid QR Orders Modal */}
+      {showUnpaidModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div onClick={() => setShowUnpaidModal(false)} className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs" />
+          <div className="relative bg-white rounded-3xl p-6 shadow-2xl max-w-lg w-full z-10 space-y-4 max-h-[90vh] flex flex-col animate-scale-up">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                  <Receipt size={22} weight="bold" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-zinc-900">Pesanan Belum Dibayar</h3>
+                  <p className="text-xs text-zinc-500">Self-Order QR dari Meja</p>
+                </div>
+              </div>
+              <button onClick={() => setShowUnpaidModal(false)} className="p-1.5 rounded-xl text-zinc-400 hover:bg-zinc-100 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto flex-1 pr-1">
+              {unpaidTransactions.length === 0 ? (
+                <div className="text-center py-12 opacity-50 space-y-1">
+                  <Receipt size={40} className="mx-auto text-zinc-400 mb-1" />
+                  <p className="text-xs font-semibold text-zinc-600">Tidak ada pesanan belum dibayar</p>
+                </div>
+              ) : (
+                unpaidTransactions.map((tx: any) => (
+                  <div key={tx.id} className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold mb-1">
+                          {tx.table?.nomorMeja ? `Meja ${tx.table.nomorMeja}` : 'Dine In'}
+                        </span>
+                        <p className="text-xs font-mono font-bold text-zinc-500">#{shortId(tx.clientUuid)}</p>
+                      </div>
+                      <span className="text-sm font-mono font-extrabold text-emerald-600">{formatRupiah(tx.total)}</span>
+                    </div>
+
+                    <div className="border-t border-zinc-200/80 pt-2 space-y-1">
+                      {tx.items?.map((item: any) => (
+                        <div key={item.id} className="flex justify-between text-xs text-zinc-700">
+                          <span>{item.jumlah}x {item.product?.namaProduk} {item.variant?.namaVarian ? `(${item.variant.namaVarian})` : ''}</span>
+                          <span className="font-mono text-zinc-500">{formatRupiah(item.hargaTotal)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handleProcessUnpaidOrder(tx)}
+                      className="w-full h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      <Receipt size={16} />
+                      <span>Proses Pembayaran di Kasir</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Payment Modal */}

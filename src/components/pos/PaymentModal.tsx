@@ -46,7 +46,7 @@ type SplitType = 'itemized' | 'nominal';
 type PaymentStep = 'input' | 'success';
 
 export default function PaymentModal({ activeShift, onClose }: Props) {
-  const { items, tipeOrder, tableId, getSubtotal, getTotal, discountAmount, discountId, clientUuid, clearCart } = useCartStore();
+  const { items, tipeOrder, tableId, getSubtotal, getTotal, discountAmount, discountId, clientUuid, unpaidTxId, clearCart } = useCartStore();
   const { user } = useAuthStore();
   const { ukuranStruk } = useSettingsStore();
   const { activeProvider: activeGatewayProvider } = usePaymentGatewayStore();
@@ -304,7 +304,13 @@ export default function PaymentModal({ activeShift, onClose }: Props) {
     };
 
     try {
-      if (navigator.onLine) {
+      if (unpaidTxId) {
+        const { data } = await api.patch(`/transactions/${unpaidTxId}/pay`, {
+          payments: transactionData.payments,
+          discountId: transactionData.discountId,
+        });
+        setCompletedTx(data.transaction);
+      } else if (navigator.onLine) {
         const { data } = await api.post('/transactions', transactionData);
         setCompletedTx(data.transaction);
       } else {
