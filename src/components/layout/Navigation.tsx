@@ -20,8 +20,6 @@ import {
   X,
   Coffee,
   QrCode,
-  Bell,
-  ChatCircleText,
 } from '@phosphor-icons/react';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -76,75 +74,82 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-// ── Mobile Drawer Navigation Component ──
+// ── Mobile Drawer Navigation Component (Matching BRESS Aesthetic) ──
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, logout } = useAuthStore();
+  const { namaCafe, logoUrl } = useSettingsStore();
   const location = useLocation();
 
   if (!open) return null;
 
   const userRole = user?.role || 'kasir';
-  const filteredGroups = navGroups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(userRole as any)),
-    }))
-    .filter((group) => group.items.length > 0);
+  const allNavItems = navGroups
+    .flatMap((g) => g.items)
+    .filter((item) => !item.roles || item.roles.includes(userRole as any));
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden font-sans">
       <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs" onClick={onClose} />
-      <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl flex flex-col z-10 animate-slide-right overflow-y-auto">
-        <div className="p-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-xs">
-              POS
-            </div>
-            <span className="font-extrabold text-sm text-zinc-900">POS CAFE</span>
+      <div className="fixed inset-y-0 left-0 w-80 bg-white shadow-2xl flex flex-col z-10 animate-slide-right overflow-y-auto rounded-r-3xl">
+        {/* Brand Header */}
+        <div className="p-5 border-b border-zinc-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logoUrl || '/logo.png'} alt={namaCafe} className="w-9 h-9 rounded-xl object-cover border border-zinc-200 shadow-xs" />
+            <span className="font-extrabold text-base text-zinc-900 tracking-tight truncate">{namaCafe || 'POS CAFE'}</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-200 cursor-pointer">
-            <X size={18} />
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 transition-colors cursor-pointer"
+          >
+            <X size={20} />
           </button>
         </div>
 
-        <div className="p-3 flex-1 space-y-4">
-          {filteredGroups.map((group) => (
-            <div key={group.title} className="space-y-1">
-              <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-3 pt-1">
-                {group.title}
-              </h4>
-              {group.items.map((item) => {
-                const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={onClose}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-[#0f172a] text-white shadow-sm'
-                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-                    }`}
-                  >
-                    <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-500'} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+        {/* BRESS Navigation List */}
+        <div className="p-4 flex-1 space-y-1.5">
+          {allNavItems.map((item) => {
+            const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onClose}
+                className={`flex items-center justify-between px-4 py-3 rounded-full text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-[#0f172a] text-white shadow-md'
+                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                  <span>{item.label}</span>
+                </div>
+                {item.to === '/table-qr' && (
+                  <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                    2
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
 
+        {/* User Footer Profile & Logout */}
         {user && (
-          <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-zinc-900">{user.nama}</p>
-              <p className="text-[11px] text-zinc-500 capitalize">{user.role?.replace('_', ' ')}</p>
+          <div className="p-4 border-t border-zinc-100 bg-zinc-50/80 flex items-center justify-between rounded-br-3xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center font-extrabold text-amber-900 text-xs shrink-0 shadow-xs">
+                {user.nama.charAt(0)}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold text-zinc-900 truncate">{user.nama}</p>
+                <p className="text-[10px] text-zinc-400 capitalize truncate">{user.role?.replace('_', ' ')}</p>
+              </div>
             </div>
             <button
               onClick={() => logout()}
-              className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-extrabold hover:bg-red-100 transition-colors cursor-pointer shrink-0"
             >
               Logout
             </button>
