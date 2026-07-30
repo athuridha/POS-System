@@ -95,6 +95,7 @@ export default function PosPage() {
         namaVarian: item.variant?.namaVarian,
         hargaSatuan: item.hargaSatuan,
         catatan: item.catatan,
+        jumlah: item.jumlah,
       });
     });
     setTipeOrder(tx.tipeOrder || 'dine_in');

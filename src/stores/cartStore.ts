@@ -12,7 +12,8 @@ interface CartState {
   unpaidTxId: string | null;
 
   // Actions
-  addItem: (item: Omit<CartItem, 'jumlah'>) => void;
+  addItem: (item: Omit<CartItem, 'jumlah'> & { jumlah?: number }) => void;
+  setCartItems: (items: CartItem[]) => void;
   removeItem: (productId: string, variantId?: string | null) => void;
   updateQuantity: (productId: string, variantId: string | null | undefined, jumlah: number) => void;
   updateItemNote: (productId: string, variantId: string | null | undefined, catatan: string) => void;
@@ -39,20 +40,23 @@ export const useCartStore = create<CartState>((set, get) => ({
   unpaidTxId: null,
 
   addItem: (item) => {
+    const qty = item.jumlah && item.jumlah > 0 ? item.jumlah : 1;
     set((state) => {
       const existing = state.items.find((i) => matchItem(i, item.productId, item.variantId));
       if (existing) {
         return {
           items: state.items.map((i) =>
             matchItem(i, item.productId, item.variantId)
-              ? { ...i, jumlah: i.jumlah + 1 }
+              ? { ...i, jumlah: i.jumlah + qty }
               : i
           ),
         };
       }
-      return { items: [...state.items, { ...item, jumlah: 1 }] };
+      return { items: [...state.items, { ...item, jumlah: qty }] };
     });
   },
+
+  setCartItems: (items) => set({ items }),
 
   removeItem: (productId, variantId) => {
     set((state) => ({
