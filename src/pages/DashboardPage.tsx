@@ -9,9 +9,14 @@ import {
   Check,
   X,
   CaretDown,
+  TrendUp,
+  Receipt,
+  Coins,
+  Coffee,
+  Table as TableIcon,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
-import { formatRupiah, shortId, formatDateTime } from '../lib/utils';
+import { formatRupiah, formatDateTime } from '../lib/utils';
 import type { Transaction } from '../types';
 
 export default function DashboardPage() {
@@ -30,6 +35,7 @@ export default function DashboardPage() {
 
   const transactions: Transaction[] = data?.transactions || [];
 
+  // Real DB Paid & Unpaid filter
   const paidTx = useMemo(() => {
     return transactions.filter((t) => t.status === 'paid');
   }, [transactions]);
@@ -38,12 +44,49 @@ export default function DashboardPage() {
     return transactions.filter((t) => t.status === 'unpaid');
   }, [transactions]);
 
+  // Real DB Total Omset calculation
+  const totalOmset = useMemo(() => {
+    return paidTx.reduce((sum, t) => sum + (t.total || 0), 0);
+  }, [paidTx]);
+
+  // Real DB Average Spend per Order
+  const avgOrderValue = useMemo(() => {
+    if (paidTx.length === 0) return 0;
+    return Math.round(totalOmset / paidTx.length);
+  }, [paidTx, totalOmset]);
+
+  // Real DB Best Seller Menu Calculation
+  const bestSeller = useMemo(() => {
+    const counts: Record<string, { name: string; qty: number }> = {};
+    transactions.forEach((tx) => {
+      tx.items?.forEach((item) => {
+        const name = item.product?.namaProduk || 'Item Cafe';
+        if (!counts[name]) {
+          counts[name] = { name, qty: 0 };
+        }
+        counts[name].qty += item.jumlah || 1;
+      });
+    });
+
+    const sorted = Object.values(counts).sort((a, b) => b.qty - a.qty);
+    return sorted[0] || null;
+  }, [transactions]);
+
+  // Unique Order ID Generator from DB Record
+  const getOrderDisplayId = (tx: Transaction) => {
+    if (tx.clientUuid === 'QR-ORDER' || !tx.clientUuid || tx.clientUuid.length < 8) {
+      return `ORD-${tx.id.substring(tx.id.length - 6).toUpperCase()}`;
+    }
+    return `ORD-${tx.clientUuid.substring(0, 6).toUpperCase()}`;
+  };
+
   const filteredTx = useMemo(() => {
     if (!searchQuery) return transactions.slice(0, 5);
     const q = searchQuery.toLowerCase();
     return transactions
       .filter(
         (t) =>
+          getOrderDisplayId(t).toLowerCase().includes(q) ||
           t.clientUuid.toLowerCase().includes(q) ||
           (t.shift?.kasir?.nama && t.shift.kasir.nama.toLowerCase().includes(q)) ||
           (t.table?.nomorMeja && t.table.nomorMeja.toLowerCase().includes(q))
@@ -75,97 +118,173 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ── 1. "Last tasks" Main Card (Executive Sales & Tasks Overview) ── */}
+      {/* ── 1. Top Executive Metric Cards (Calculated Dynamically from Database) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Total Omset (Real DB Sum) */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-white space-y-2">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Total Omset</span>
+            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+              <Coins size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-zinc-900 font-mono tracking-tight">{formatRupiah(totalOmset)}</p>
+            <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold mt-1">
+              <TrendUp size={14} weight="bold" />
+              <span>{paidTx.length} transaksi terbayar</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Metric 2: Total Transaksi (Real DB Count) */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-white space-y-2">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Total Transaksi</span>
+            <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
+              <Receipt size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-zinc-900 font-mono tracking-tight">{transactions.length} Order</p>
+            <p className="text-xs text-zinc-400 font-semibold mt-1">
+              <span className="text-emerald-600 font-bold">{paidTx.length} Lunas</span> • <span className="text-amber-600 font-bold">{unpaidTx.length} Belum Bayar</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Metric 3: Rata-Rata Order Value (Real DB Basket Size) */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-white space-y-2">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Rata-Rata Basket Size</span>
+            <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+              <TableIcon size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-zinc-900 font-mono tracking-tight">{formatRupiah(avgOrderValue)}</p>
+            <p className="text-xs text-zinc-400 font-semibold mt-1">Rata-rata per transaksi</p>
+          </div>
+        </div>
+
+        {/* Metric 4: Real Database Best Seller Item */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-white space-y-2">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-xs font-extrabold uppercase tracking-wider">Menu Terlaris</span>
+            <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+              <Coffee size={18} />
+            </div>
+          </div>
+          <div>
+            <p className="text-lg font-extrabold text-zinc-900 truncate">
+              {bestSeller ? bestSeller.name : 'Belum Ada Data'}
+            </p>
+            <p className="text-xs text-emerald-600 font-extrabold mt-1">
+              {bestSeller ? `${bestSeller.qty} Porsi Terjual` : '0 Porsi Terjual'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. Main Sales & Order Stream Card (Dynamic DB Transactions) ── */}
       <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white space-y-6">
         {/* Card Header with Big Numbers */}
         <div className="flex items-start justify-between flex-wrap gap-4 border-b border-zinc-100 pb-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight">Last tasks</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight">Executive Sales Overview</h1>
             <p className="text-xs sm:text-sm font-semibold text-zinc-400 mt-1">
-              <span className="font-bold text-zinc-800">{transactions.length} total</span>, proceed to resolve them
+              <span className="font-bold text-zinc-800">{transactions.length} total pesanan</span>, siap diproses & dipantau kasir
             </p>
           </div>
 
           <div className="flex items-center gap-6 sm:gap-8">
             <div className="text-center sm:text-right">
               <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{paidTx.length}</p>
-              <p className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider mt-0.5">Done</p>
+              <p className="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wider mt-0.5">LUNAS / DONE</p>
             </div>
             <div className="h-10 w-px bg-zinc-200/80" />
             <div className="text-center sm:text-right">
               <p className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight font-mono">{unpaidTx.length}</p>
-              <p className="text-[11px] font-extrabold text-zinc-400 uppercase tracking-wider mt-0.5">In progress</p>
+              <p className="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider mt-0.5">BELUM BAYAR</p>
             </div>
           </div>
         </div>
 
-        {/* BRESS Tasks Table View */}
+        {/* Cafe Sales Table View */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse min-w-[700px]">
             <thead>
               <tr className="text-zinc-400 font-bold border-b border-zinc-100 pb-3 text-[11px]">
                 <th className="py-3 px-3 font-semibold w-8"></th>
-                <th className="py-3 px-3 font-semibold">Name</th>
-                <th className="py-3 px-3 font-semibold">Admin</th>
-                <th className="py-3 px-3 font-semibold">Members</th>
-                <th className="py-3 px-3 font-semibold">Status</th>
-                <th className="py-3 px-3 font-semibold">Run time</th>
-                <th className="py-3 px-3 font-semibold text-right">Finish date</th>
+                <th className="py-3 px-3 font-semibold">NO. TRANSAKSI</th>
+                <th className="py-3 px-3 font-semibold">KASIR / OPERATOR</th>
+                <th className="py-3 px-3 font-semibold">MEJA / TIPE</th>
+                <th className="py-3 px-3 font-semibold">STATUS PEMBAYARAN</th>
+                <th className="py-3 px-3 font-semibold">JAM ORDER</th>
+                <th className="py-3 px-3 font-semibold text-right">TOTAL PEMBAYARAN</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100/80 font-medium text-zinc-700">
-              {filteredTx.map((tx, idx) => (
-                <tr
-                  key={tx.id}
-                  onClick={() => setSelectedTx(tx)}
-                  className="hover:bg-zinc-50/80 transition-colors cursor-pointer group"
-                >
-                  <td className="py-4 px-3">
-                    <div className="w-4 h-4 rounded border border-zinc-300 bg-white flex items-center justify-center group-hover:border-zinc-500">
-                      {tx.status === 'paid' && <Check size={10} className="text-emerald-600 font-bold" />}
-                    </div>
-                  </td>
-                  <td className="py-4 px-3 font-extrabold text-zinc-900 group-hover:text-emerald-600 transition-colors">
-                    Order #{shortId(tx.clientUuid)}
-                  </td>
-                  <td className="py-4 px-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-[10px] font-extrabold text-amber-900 shrink-0">
-                        {tx.shift?.kasir?.nama ? tx.shift.kasir.nama.charAt(0) : 'K'}
+              {filteredTx.map((tx) => {
+                const orderIdStr = getOrderDisplayId(tx);
+                const orderTimeStr = new Date(tx.createdAt).toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+
+                return (
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTx(tx)}
+                    className="hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+                  >
+                    <td className="py-4 px-3">
+                      <div className="w-4 h-4 rounded border border-zinc-300 bg-white flex items-center justify-center group-hover:border-zinc-500">
+                        {tx.status === 'paid' && <Check size={10} className="text-emerald-600 font-bold" />}
                       </div>
-                      <span className="font-bold text-zinc-800">{tx.shift?.kasir?.nama || 'Samanta J.'}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-3 font-mono font-bold text-zinc-600">
-                    {tx.items?.length || 3}
-                  </td>
-                  <td className="py-4 px-3">
-                    {tx.status === 'paid' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
-                        <CheckCircle size={13} weight="fill" className="text-emerald-600" />
-                        <span>Done</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 font-bold text-[11px] border border-sky-200/60">
-                        <Clock size={13} className="text-sky-600" />
-                        <span>In progress</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-4 px-3 text-zinc-500 font-mono">
-                    {idx === 0 ? '6 hours' : idx === 1 ? '2 hours' : idx === 2 ? '3 days' : '1 week'}
-                  </td>
-                  <td className="py-4 px-3 text-right font-mono font-extrabold text-zinc-900">
-                    {formatRupiah(tx.total)}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="py-4 px-3 font-extrabold text-zinc-900 group-hover:text-emerald-600 transition-colors font-mono">
+                      {orderIdStr}
+                    </td>
+                    <td className="py-4 px-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-[10px] font-extrabold text-amber-900 shrink-0">
+                          {tx.shift?.kasir?.nama ? tx.shift.kasir.nama.charAt(0) : 'K'}
+                        </div>
+                        <span className="font-bold text-zinc-800">{tx.shift?.kasir?.nama || 'Kasir System'}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-3 font-semibold text-zinc-700">
+                      {tx.table?.nomorMeja ? `Meja ${tx.table.nomorMeja}` : tx.tipeOrder === 'dine_in' ? 'Dine In' : 'Take Away'}
+                    </td>
+                    <td className="py-4 px-3">
+                      {tx.status === 'paid' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/60">
+                          <CheckCircle size={13} weight="fill" className="text-emerald-600" />
+                          <span>Lunas</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 font-bold text-[11px] border border-amber-200/60">
+                          <Clock size={13} className="text-amber-600" />
+                          <span>Belum Bayar</span>
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-3 text-zinc-500 font-mono">
+                      {orderTimeStr} WIB
+                    </td>
+                    <td className="py-4 px-3 text-right font-mono font-extrabold text-zinc-900">
+                      {formatRupiah(tx.total)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ── 2. Bottom Row Grid (Peak Hours Performance Chart + Live Order Kitchen Stream) ── */}
+      {/* ── 3. Bottom Row Grid (Peak Hours Analytics + Live Kitchen Order Stream) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Card: "Peak Hours Performance" Chart Widget (7 Columns) */}
         <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white flex flex-col justify-between space-y-6">
@@ -174,16 +293,16 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Peak Hours Performance</h2>
               <div className="flex items-center gap-4 text-xs mt-1 font-bold">
                 <span className="flex items-center gap-1.5 text-sky-500">
-                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> Volume Stream
+                  <span className="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block" /> Volume Order (Struk)
                 </span>
                 <span className="flex items-center gap-1.5 text-purple-600">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" /> Revenue Peak
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 inline-block" /> Omset Penjualan (Rp)
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-zinc-400">Data updates every 3 hours</span>
+              <span className="text-[11px] font-semibold text-zinc-400">Pembaruan data jam sibuk</span>
               <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-700 text-xs font-bold border border-zinc-200/80 cursor-pointer">
                 <span>01-07 May</span>
                 <CaretDown size={11} className="text-zinc-400" />
@@ -194,7 +313,7 @@ export default function DashboardPage() {
           {/* SVG Line Graph */}
           <div className="relative pt-6 pb-2">
             <div className="absolute top-0 left-[48%] -translate-x-1/2 bg-[#0f172a] text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow-xl flex items-center gap-1 z-10">
-              <span>3h 10m (Peak: 14:00)</span>
+              <span>Jam Puncak: 14:00 (Lunch & Coffee Rush)</span>
             </div>
 
             <svg className="w-full h-44 overflow-visible" viewBox="0 0 500 150" fill="none">
@@ -239,7 +358,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-800 pb-4 z-10">
             <div>
               <h2 className="text-xl font-extrabold text-white tracking-tight">Live Order Stream</h2>
-              <p className="text-[11px] text-slate-400 font-semibold">Kitchen & table activity stack</p>
+              <p className="text-[11px] text-slate-400 font-semibold">Antrean & aktivitas pesanan dapur</p>
             </div>
             <div className="flex items-center gap-1.5">
               <button
@@ -290,7 +409,7 @@ export default function DashboardPage() {
                 {/* Order Name & Main Items Preview */}
                 <div>
                   <h3 className="text-base font-extrabold text-zinc-900 tracking-tight">
-                    Order #{shortId(activeCard.clientUuid)}
+                    {getOrderDisplayId(activeCard)}
                   </h3>
                   <p className="text-xs text-zinc-500 font-semibold line-clamp-1 mt-0.5">
                     {activeCard.items?.map((i) => `${i.jumlah}x ${i.product?.namaProduk || 'Item'}`).join(', ') || '3 items order'}
@@ -333,18 +452,18 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 3. Transaction Detail Modal (Frosted Glass Overlay) ── */}
+      {/* ── 4. Transaction Detail Modal (Frosted Glass Overlay) ── */}
       {selectedTx && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs font-sans animate-fade-in">
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 bg-[#0f172a] text-white flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-base font-extrabold tracking-tight">Order #{shortId(selectedTx.clientUuid)}</span>
+                  <span className="font-mono text-base font-extrabold tracking-tight">{getOrderDisplayId(selectedTx)}</span>
                   {selectedTx.status === 'paid' ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold border border-emerald-500/30">PAID</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold border border-emerald-500/30">LUNAS</span>
                   ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/30">UNPAID</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold border border-amber-500/30">BELUM BAYAR</span>
                   )}
                 </div>
                 <p className="text-xs text-zinc-400">{formatDateTime(selectedTx.createdAt)}</p>
@@ -360,7 +479,7 @@ export default function DashboardPage() {
             <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
               <div className="grid grid-cols-2 gap-3 bg-zinc-50 p-3.5 rounded-2xl border border-zinc-200/80">
                 <div>
-                  <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Kasir / User</p>
+                  <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Kasir / Operator</p>
                   <p className="font-bold text-zinc-900 mt-0.5">{selectedTx.shift?.kasir?.nama || 'System Kasir'}</p>
                 </div>
                 <div>
