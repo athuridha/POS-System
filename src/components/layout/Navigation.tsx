@@ -68,7 +68,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: '/reports', label: 'Laporan Penjualan', icon: ChartBar, roles: ['manager', 'super_admin'] },
       { to: '/payment-gateway', label: 'Payment Gateway', icon: CreditCard, roles: ['manager', 'super_admin'] },
-      { to: '/settings', label: 'Pengaturan Struk', icon: Gear, roles: ['kasir', 'manager', 'super_admin'] },
+      { to: '/settings', label: 'Pengaturan Struk', icon: Gear, roles: ['manager', 'super_admin'] },
     ],
   },
 ];

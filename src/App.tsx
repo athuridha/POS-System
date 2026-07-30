@@ -93,7 +93,6 @@ export default function App() {
               <Route path="/kds" element={<KdsPage />} />
               <Route path="/shifts" element={<ShiftPage />} />
               <Route path="/history" element={<TransactionHistoryPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             {/* 2. Executive Manager & SuperAdmin Layout */}
@@ -114,6 +113,7 @@ export default function App() {
               <Route path="/discounts" element={<DiscountPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/payment-gateway" element={<PaymentGatewayPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
             <Route path="/" element={<RootRedirect />} />
