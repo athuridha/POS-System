@@ -34,15 +34,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center p-4 bg-gradient-to-b from-[#26d0ce] via-[#1ac1c6] to-[#e0f2fe] relative overflow-hidden font-sans">
+    <div className="min-h-[100dvh] w-full flex items-center justify-center p-4 bg-gradient-to-b from-[#059669] via-[#10b981] to-[#ecfdf5] relative overflow-hidden font-sans">
       {/* Decorative ambient background blobs */}
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-white/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-cyan-300/30 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-300/30 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Floating Card */}
       <div className="w-full max-w-[400px] bg-white rounded-[2.5rem] p-8 sm:p-9 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.18)] border border-white/60 relative z-10 animate-fade-in flex flex-col items-center">
         {/* Top Circular Logo Badge */}
-        <div className="w-24 h-24 rounded-full bg-[#2cd4d9] flex items-center justify-center shadow-lg shadow-[#2cd4d9]/40 mb-6 shrink-0 border-4 border-white overflow-hidden p-1">
+        <div className="w-24 h-24 rounded-full bg-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-600/30 mb-6 shrink-0 border-4 border-white overflow-hidden p-1">
           {logoUrl ? (
             <img src={logoUrl} alt="Logo Cafe" className="w-full h-full object-cover rounded-full" />
           ) : (
@@ -78,7 +78,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Username / Email"
               required
-              className="w-full h-12 pl-11 pr-4 rounded-full bg-[#d4d4d8]/60 text-sm font-medium text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#2cd4d9] focus:bg-white transition-all border border-transparent focus:border-[#2cd4d9]"
+              className="w-full h-12 pl-11 pr-4 rounded-full bg-[#d4d4d8]/60 text-sm font-medium text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all border border-transparent focus:border-emerald-500"
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               required
-              className="w-full h-12 pl-11 pr-11 rounded-full bg-[#d4d4d8]/60 text-sm font-medium text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#2cd4d9] focus:bg-white transition-all border border-transparent focus:border-[#2cd4d9]"
+              className="w-full h-12 pl-11 pr-11 rounded-full bg-[#d4d4d8]/60 text-sm font-medium text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all border border-transparent focus:border-emerald-500"
             />
             <button
               type="button"
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-zinc-300 text-[#2cd4d9] focus:ring-[#2cd4d9] cursor-pointer"
+                className="w-4 h-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
               />
               <span>Remember me</span>
             </label>
@@ -128,7 +128,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 mt-2 rounded-full bg-[#2cd4d9] hover:bg-[#06b6d4] text-white text-sm font-extrabold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-[#2cd4d9]/40 flex items-center justify-center"
+            className="w-full h-12 mt-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-md shadow-emerald-600/30 flex items-center justify-center"
           >
             {loading ? (
               <CircleNotch size={22} className="animate-spin text-white" />

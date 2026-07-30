@@ -12,6 +12,9 @@ import {
   ArrowRight,
   Sparkle,
   CircleNotch,
+  CreditCard,
+  Storefront,
+  Info,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
 import { formatRupiah, shortId } from '../lib/utils';
@@ -156,7 +159,7 @@ export default function PublicOrderPage() {
 
   if (placedOrder) {
     return (
-      <div className="min-h-[100dvh] bg-gradient-to-b from-[#26d0ce] to-[#1ac1c6] p-6 flex items-center justify-center font-sans">
+      <div className="min-h-[100dvh] bg-gradient-to-b from-[#059669] via-[#10b981] to-[#ecfdf5] p-6 flex items-center justify-center font-sans">
         <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl text-center space-y-4 border border-white/60 animate-fade-in">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle size={44} weight="fill" />
@@ -179,11 +182,19 @@ export default function PublicOrderPage() {
             </div>
           </div>
 
-          <p className="text-xs text-zinc-400">Silakan lakukan pembayaran di kasir atau tunggu barista mengantarkan pesanan Anda.</p>
+          <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 text-zinc-800 space-y-1.5 text-xs text-left shadow-xs">
+            <div className="flex items-center gap-2 font-bold text-zinc-900">
+              <Storefront size={18} className="text-emerald-600" />
+              <span>Petunjuk Pembayaran Kasir:</span>
+            </div>
+            <p className="text-zinc-600 leading-relaxed">
+              Pesanan Anda telah langsung terkirim ke Kasir & Dapur Barista. <strong className="text-zinc-900">Silakan menuju ke Meja Kasir untuk melunasi pembayaran</strong> dengan menyebutkan <strong className="text-zinc-900">Meja {currentTable?.nomorMeja || tableId}</strong> atau <strong className="text-zinc-900">No. Pesanan #{shortId(placedOrder.clientUuid)}</strong>.
+            </p>
+          </div>
 
           <button
             onClick={() => setPlacedOrder(null)}
-            className="w-full h-12 rounded-2xl bg-[#2cd4d9] hover:bg-[#06b6d4] text-white font-bold text-sm shadow-md cursor-pointer"
+            className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md cursor-pointer transition-all active:scale-[0.98]"
           >
             Pesan Menu Tambahan
           </button>
@@ -197,7 +208,7 @@ export default function PublicOrderPage() {
       {/* Public Navbar */}
       <header className="h-16 bg-white border-b border-zinc-200 px-4 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#2cd4d9] flex items-center justify-center text-white font-bold">
+          <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold">
             <Coffee size={22} weight="bold" />
           </div>
           <div>
@@ -224,7 +235,7 @@ export default function PublicOrderPage() {
             placeholder="Cari menu favorit Anda..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 rounded-2xl border border-zinc-300 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#2cd4d9] transition-all shadow-xs"
+            className="w-full h-11 pl-10 pr-4 rounded-2xl border border-zinc-300 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-xs"
           />
         </div>
 
@@ -233,7 +244,7 @@ export default function PublicOrderPage() {
           <button
             onClick={() => setActiveCategory(null)}
             className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              !activeCategory ? 'bg-[#2cd4d9] text-white shadow-xs' : 'bg-white text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
+              !activeCategory ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
             }`}
           >
             Semua Menu
@@ -243,7 +254,7 @@ export default function PublicOrderPage() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeCategory === cat.id ? 'bg-[#2cd4d9] text-white shadow-xs' : 'bg-white text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
+                activeCategory === cat.id ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
               }`}
             >
               {cat.namaKategori}
@@ -264,7 +275,7 @@ export default function PublicOrderPage() {
               <div
                 key={p.id}
                 onClick={() => addItem(p.id, null, p.namaProduk, undefined, p.hargaDasar)}
-                className="p-3.5 rounded-2xl border border-zinc-200 bg-white shadow-xs hover:border-[#2cd4d9] transition-all cursor-pointer flex flex-col justify-between"
+                className="p-3.5 rounded-2xl border border-zinc-200 bg-white shadow-xs hover:border-emerald-500 transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <img
@@ -277,7 +288,7 @@ export default function PublicOrderPage() {
                 </div>
                 <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-100">
                   <span className="text-xs font-bold font-mono text-emerald-600">{formatRupiah(p.hargaDasar)}</span>
-                  <div className="w-7 h-7 rounded-lg bg-[#2cd4d9]/10 text-[#2cd4d9] flex items-center justify-center font-bold">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
                     <Plus size={14} />
                   </div>
                 </div>
@@ -292,7 +303,7 @@ export default function PublicOrderPage() {
         <div className="fixed bottom-4 left-4 right-4 z-40 max-w-md mx-auto animate-slide-up">
           <button
             onClick={() => setShowCartDrawer(true)}
-            className="w-full h-14 px-5 rounded-2xl bg-[#2cd4d9] hover:bg-[#06b6d4] text-white text-sm font-bold flex items-center justify-between shadow-xl shadow-cyan-400/30 transition-transform active:scale-[0.98] cursor-pointer"
+            className="w-full h-14 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center justify-between shadow-xl shadow-emerald-600/30 transition-transform active:scale-[0.98] cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-mono font-bold text-xs">
@@ -360,10 +371,14 @@ export default function PublicOrderPage() {
                 <span>Total Pesanan</span>
                 <span className="font-mono text-emerald-600">{formatRupiah(total)}</span>
               </div>
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-600 text-xs">
+                <Info size={16} className="text-emerald-600 shrink-0" />
+                <span>Pembayaran dilakukan langsung di meja kasir setelah pesanan terkirim.</span>
+              </div>
               <button
                 onClick={handlePlaceOrder}
                 disabled={submitting}
-                className="w-full h-12 rounded-2xl bg-[#2cd4d9] hover:bg-[#06b6d4] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all active:scale-[0.98]"
               >
                 {submitting ? <CircleNotch size={20} className="animate-spin" /> : <span>Kirim Pesanan Ke Dapur</span>}
               </button>
