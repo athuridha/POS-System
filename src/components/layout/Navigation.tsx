@@ -74,7 +74,7 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-// ── Mobile Drawer Navigation Component (Matching BRESS Aesthetic) ──
+// ── Mobile Drawer Navigation Component (Categorized & BRESS Aesthetic) ──
 export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, logout } = useAuthStore();
   const { namaCafe, logoUrl } = useSettingsStore();
@@ -83,9 +83,12 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
   if (!open) return null;
 
   const userRole = user?.role || 'kasir';
-  const allNavItems = navGroups
-    .flatMap((g) => g.items)
-    .filter((item) => !item.roles || item.roles.includes(userRole as any));
+  const filteredGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.roles || item.roles.includes(userRole as any)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden font-sans">
@@ -105,34 +108,43 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
           </button>
         </div>
 
-        {/* BRESS Navigation List */}
-        <div className="p-4 flex-1 space-y-1.5">
-          {allNavItems.map((item) => {
-            const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={onClose}
-                className={`flex items-center justify-between px-4 py-3 rounded-full text-xs font-bold transition-all ${
-                  isActive
-                    ? 'bg-[#0f172a] text-white shadow-md'
-                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
-                  <span>{item.label}</span>
-                </div>
-                {item.to === '/table-qr' && (
-                  <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
-                    2
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        {/* Categorized Mobile Navigation List */}
+        <div className="p-4 flex-1 space-y-4">
+          {filteredGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-4 pt-1">
+                {group.title}
+              </h4>
+              <nav className="flex flex-col gap-1">
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={onClose}
+                      className={`flex items-center justify-between px-4 py-2.5 rounded-full text-xs font-bold transition-all ${
+                        isActive
+                          ? 'bg-[#0f172a] text-white shadow-md'
+                          : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.to === '/table-qr' && (
+                        <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                          2
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
 
         {/* User Footer Profile & Logout */}
@@ -229,52 +241,66 @@ export function PosSidebar() {
   );
 }
 
-// ── 2. ExecutiveSidebar (Matching BRESS Layout with Dynamic Cafe Settings) ──
+// ── 2. ExecutiveSidebar (Categorized Sections with BRESS Aesthetic) ──
 export function ExecutiveSidebar() {
   const { namaCafe, logoUrl } = useSettingsStore();
   const location = useLocation();
   const { user } = useAuthStore();
 
   const userRole = user?.role || 'kasir';
-  const allNavItems = navGroups.flatMap((g) => g.items).filter((item) => !item.roles || item.roles.includes(userRole as any));
+  const filteredGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.roles || item.roles.includes(userRole as any)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-y-auto">
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Brand Header with Dynamic Cafe Settings */}
         <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">
           <img src={logoUrl || '/logo.png'} alt={namaCafe} className="w-9 h-9 rounded-xl object-cover border border-zinc-200 shadow-xs" />
           <span className="font-extrabold text-lg text-zinc-900 tracking-tight truncate">{namaCafe || 'POS CAFE'}</span>
         </div>
 
-        {/* Navigation Items with BRESS Dark Pill Active Indicator */}
-        <nav className="flex flex-col gap-1.5">
-          {allNavItems.map((item) => {
-            const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center justify-between px-4 py-3 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-[#0f172a] text-white shadow-lg shadow-slate-900/20 translate-x-1'
-                    : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
-                  <span>{item.label}</span>
-                </div>
-                {item.to === '/table-qr' && (
-                  <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
-                    2
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Categorized Navigation Groups */}
+        <div className="space-y-4">
+          {filteredGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-4 pt-1">
+                {group.title}
+              </h4>
+              <nav className="flex flex-col gap-1">
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      className={`flex items-center justify-between px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? 'bg-[#0f172a] text-white shadow-md shadow-slate-900/20 translate-x-0.5'
+                          : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon size={17} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.to === '/table-qr' && (
+                        <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                          2
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
+        </div>
       </div>
     </aside>
   );
