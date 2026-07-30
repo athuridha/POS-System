@@ -73,39 +73,12 @@ export const navGroups: NavGroup[] = [
   },
 ];
 
-export function TopBar() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingCount, setPendingCount] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+// ── Mobile Drawer Navigation Component ──
+export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, logout } = useAuthStore();
-  const { logoUrl } = useSettingsStore();
-  const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    const unsub = onSyncStatusChange(setPendingCount);
-    getPendingCount().then(setPendingCount);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      unsub();
-    };
-  }, []);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  if (!open) return null;
 
   const userRole = user?.role || 'kasir';
   const filteredGroups = navGroups
@@ -116,137 +89,66 @@ export function TopBar() {
     .filter((group) => group.items.length > 0);
 
   return (
-    <>
-      <header className="h-14 border-b border-zinc-200 bg-white flex items-center justify-between px-3 sm:px-4 shrink-0 shadow-xs z-30 font-sans">
-        {/* Left: Mobile Hamburger + Brand */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="lg:hidden p-2 rounded-xl text-zinc-600 hover:bg-zinc-100 transition-colors cursor-pointer"
-            aria-label="Buka Menu"
-          >
-            <List size={22} weight="bold" />
+    <div className="fixed inset-0 z-50 lg:hidden font-sans">
+      <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs" onClick={onClose} />
+      <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl flex flex-col z-10 animate-slide-right overflow-y-auto">
+        <div className="p-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-xs">
+              POS
+            </div>
+            <span className="font-extrabold text-sm text-zinc-900">POS CAFE</span>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-200 cursor-pointer">
+            <X size={18} />
           </button>
-
-          <img src={logoUrl || '/logo.png'} alt="POS Cafe Logo" className="w-8 h-8 rounded-lg object-cover shadow-xs border border-zinc-200" />
-          <span className="font-bold text-base tracking-tight text-zinc-900 truncate">POS Cafe</span>
         </div>
 
-        {/* Right: Status + User */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Pending sync indicator */}
-          {pendingCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-semibold">
-              <ArrowsClockwise size={13} className="animate-spin" />
-              <span className="hidden sm:inline">{pendingCount} belum sync</span>
-              <span className="sm:hidden">{pendingCount}</span>
+        <div className="p-3 flex-1 space-y-4">
+          {filteredGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-3 pt-1">
+                {group.title}
+              </h4>
+              {group.items.map((item) => {
+                const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={onClose}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-[#0f172a] text-white shadow-sm'
+                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+                    }`}
+                  >
+                    <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-500'} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
-          )}
+          ))}
+        </div>
 
-          {/* Connection status */}
-          <div
-            className={`flex items-center gap-1.5 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-semibold border ${
-              isOnline
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : 'bg-red-50 text-red-700 border-red-200'
-            }`}
-          >
-            {isOnline ? <WifiHigh size={14} weight="bold" /> : <WifiSlash size={14} weight="bold" />}
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
+        {user && (
+          <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-zinc-900">{user.nama}</p>
+              <p className="text-[11px] text-zinc-500 capitalize">{user.role?.replace('_', ' ')}</p>
+            </div>
+            <button
+              onClick={() => logout()}
+              className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
-
-          {/* User Profile Badge */}
-          {user && (
-            <div className="flex items-center gap-2 pl-2 border-l border-zinc-200">
-              <div className="w-7 h-7 rounded-full bg-zinc-100 border border-zinc-300 flex items-center justify-center font-bold text-xs text-zinc-700">
-                {user.nama.charAt(0)}
-              </div>
-              <div className="hidden md:block text-left text-xs">
-                <p className="font-bold text-zinc-900 leading-tight">{user.nama}</p>
-                <p className="text-[10px] text-zinc-500 capitalize">{user.role?.replace('_', ' ')}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                title="Logout"
-              >
-                <SignOut size={16} />
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* Mobile Navigation Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden font-sans">
-          <div
-            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-2xl flex flex-col z-10 animate-slide-right overflow-y-auto">
-            <div className="p-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-xs">
-                  POS
-                </div>
-                <span className="font-extrabold text-sm text-zinc-900">POS CAFE</span>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-200"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Grouped Mobile Navigation Items */}
-            <div className="p-3 flex-1 space-y-4">
-              {filteredGroups.map((group) => (
-                <div key={group.title} className="space-y-1">
-                  <h4 className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider px-3 pt-1">
-                    {group.title}
-                  </h4>
-                  {group.items.map((item) => {
-                    const isActive = location.pathname === item.to || (item.to !== '/pos' && location.pathname.startsWith(item.to + '/'));
-                    const Icon = item.icon;
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                          isActive
-                            ? 'bg-[#0f172a] text-white shadow-sm'
-                            : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
-                        }`}
-                      >
-                        <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-500'} />
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-
-            {user && (
-              <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-zinc-900">{user.nama}</p>
-                  <p className="text-[11px] text-zinc-500 capitalize">{user.role?.replace('_', ' ')}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -333,8 +235,8 @@ export function ExecutiveSidebar() {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="hidden lg:flex w-60 bg-[#dce3ea] p-4 flex-col justify-between shrink-0 font-sans">
-      <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-4 shadow-sm border border-white/80 flex flex-col justify-between flex-1 space-y-4 overflow-y-auto">
+    <aside className="hidden lg:flex w-60 bg-[#dce3ea] p-4 pr-0 flex-col justify-between shrink-0 font-sans">
+      <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-4 shadow-sm border border-white/80 flex flex-col justify-between h-full space-y-4 overflow-y-auto">
         <div className="space-y-4">
           <div className="flex items-center gap-3 px-3 py-2 border-b border-zinc-100 pb-3">
             <div className="w-10 h-10 rounded-2xl bg-[#0f172a] flex items-center justify-center text-white font-black text-base shadow-sm">
