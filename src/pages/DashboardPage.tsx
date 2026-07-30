@@ -1,33 +1,24 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  MagnifyingGlass,
-  CalendarBlank,
   CheckCircle,
   CircleNotch,
   Clock,
   CaretRight,
-  CaretLeft,
   Check,
   X,
   ChatCircleText,
   FileText,
   CaretDown,
-  WifiHigh,
-  WifiSlash,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
 import { formatRupiah, shortId, formatDateTime } from '../lib/utils';
 import type { Transaction } from '../types';
-import { useAuthStore } from '../stores/authStore';
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [dateFilter, setDateFilter] = useState<'today' | '7days' | '30days' | 'all'>('all');
-  const [showDateDropdown, setShowDateDropdown] = useState(false);
-  const { user } = useAuthStore();
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-transactions'],
@@ -40,38 +31,18 @@ export default function DashboardPage() {
 
   const transactions: Transaction[] = data?.transactions || [];
 
-  // Filter transactions dynamically based on active date range
-  const dateFilteredTx = useMemo(() => {
-    const now = new Date();
-    return transactions.filter((t) => {
-      const txDate = new Date(t.createdAt);
-      if (dateFilter === 'today') {
-        return txDate.toDateString() === now.toDateString();
-      }
-      if (dateFilter === '7days') {
-        const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
-        return diffDays <= 7;
-      }
-      if (dateFilter === '30days') {
-        const diffDays = (now.getTime() - txDate.getTime()) / (1000 * 3600 * 24);
-        return diffDays <= 30;
-      }
-      return true;
-    });
-  }, [transactions, dateFilter]);
-
   const paidTx = useMemo(() => {
-    return dateFilteredTx.filter((t) => t.status === 'paid');
-  }, [dateFilteredTx]);
+    return transactions.filter((t) => t.status === 'paid');
+  }, [transactions]);
 
   const unpaidTx = useMemo(() => {
-    return dateFilteredTx.filter((t) => t.status === 'unpaid');
-  }, [dateFilteredTx]);
+    return transactions.filter((t) => t.status === 'unpaid');
+  }, [transactions]);
 
   const filteredTx = useMemo(() => {
-    if (!searchQuery) return dateFilteredTx.slice(0, 5);
+    if (!searchQuery) return transactions.slice(0, 5);
     const q = searchQuery.toLowerCase();
-    return dateFilteredTx
+    return transactions
       .filter(
         (t) =>
           t.clientUuid.toLowerCase().includes(q) ||
@@ -79,18 +50,14 @@ export default function DashboardPage() {
           (t.table?.nomorMeja && t.table.nomorMeja.toLowerCase().includes(q))
       )
       .slice(0, 5);
-  }, [dateFilteredTx, searchQuery]);
+  }, [transactions, searchQuery]);
 
   const activeOrders = useMemo(() => {
-    return dateFilteredTx.slice(0, 6);
-  }, [dateFilteredTx]);
+    return transactions.slice(0, 6);
+  }, [transactions]);
 
   const handleNextCarousel = () => {
     setCarouselIndex((prev) => (prev + 1) % Math.max(1, activeOrders.length));
-  };
-
-  const handlePrevCarousel = () => {
-    setCarouselIndex((prev) => (prev - 1 + activeOrders.length) % Math.max(1, activeOrders.length));
   };
 
   if (isLoading) {
@@ -105,101 +72,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* ── 1. Top Search Header Card (Exact BRESS Search Bar with Functional Date Selector) ── */}
-      <div className="bg-white rounded-[2rem] p-4 px-6 shadow-sm border border-white flex items-center justify-between gap-4 flex-wrap">
-        {/* Search Bar Input */}
-        <div className="relative flex-1 min-w-[220px]">
-          <MagnifyingGlass size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 pl-11 pr-4 rounded-full bg-[#f1f5f9]/70 text-xs font-semibold text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-300 focus:bg-white transition-all border border-transparent"
-          />
-        </div>
-
-        {/* Date Selector Dropdown Button & Interactive Range Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowDateDropdown(!showDateDropdown)}
-            className="flex items-center gap-2 text-xs font-bold text-zinc-700 bg-[#f1f5f9]/70 px-4 py-2.5 rounded-full border border-transparent hover:bg-zinc-200/50 transition-colors cursor-pointer"
-          >
-            <CalendarBlank size={16} className="text-zinc-500" />
-            <span>
-              {dateFilter === 'today'
-                ? `Hari Ini (${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`
-                : dateFilter === '7days'
-                ? '7 Hari Terakhir'
-                : dateFilter === '30days'
-                ? '30 Hari Terakhir'
-                : 'Semua Waktu'}
-            </span>
-            <CaretDown size={12} className={`text-zinc-400 transition-transform ${showDateDropdown ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Interactive Date Filter Dropdown */}
-          {showDateDropdown && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-zinc-100 py-2 z-30 font-sans animate-fade-in">
-              <button
-                onClick={() => { setDateFilter('today'); setShowDateDropdown(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                  dateFilter === 'today' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                Hari Ini
-              </button>
-              <button
-                onClick={() => { setDateFilter('7days'); setShowDateDropdown(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                  dateFilter === '7days' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                7 Hari Terakhir
-              </button>
-              <button
-                onClick={() => { setDateFilter('30days'); setShowDateDropdown(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                  dateFilter === '30days' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                30 Hari Terakhir
-              </button>
-              <button
-                onClick={() => { setDateFilter('all'); setShowDateDropdown(false); }}
-                className={`w-full text-left px-4 py-2 text-xs font-bold transition-colors cursor-pointer ${
-                  dateFilter === 'all' ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                Semua Waktu
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* User Profile Info & Status */}
-        <div className="flex items-center gap-3 border-l border-zinc-100 pl-4">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200/60">
-            <WifiHigh size={14} weight="bold" />
-            <span>Online</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-extrabold text-xs shadow-xs">
-              {user?.nama?.charAt(0) || 'A'}
-            </div>
-            <span className="text-xs font-extrabold text-zinc-800 hidden sm:inline">{user?.nama || 'Admin'}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 2. "Last tasks" Main Card (Exact BRESS 1-to-1) ── */}
+      {/* ── 1. "Last tasks" Main Card (Exact BRESS 1-to-1) ── */}
       <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white space-y-6">
         {/* Card Header with Big Numbers */}
         <div className="flex items-start justify-between flex-wrap gap-4 border-b border-zinc-100 pb-6">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight">Last tasks</h1>
             <p className="text-xs sm:text-sm font-semibold text-zinc-400 mt-1">
-              <span className="font-bold text-zinc-800">{dateFilteredTx.length} total</span>, proceed to resolve them
+              <span className="font-bold text-zinc-800">{transactions.length} total</span>, proceed to resolve them
             </p>
           </div>
 
@@ -282,7 +162,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 3. Bottom Row Grid (2 Columns matching BRESS 1-to-1) ── */}
+      {/* ── 2. Bottom Row Grid (2 Columns matching BRESS 1-to-1) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Card: "Productivity" Chart Widget (7 Columns) */}
         <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white flex flex-col justify-between space-y-6">
@@ -310,7 +190,6 @@ export default function DashboardPage() {
 
           {/* SVG Line Graph matching BRESS */}
           <div className="relative pt-6 pb-2">
-            {/* Tooltip Badge matching BRESS 3h 10m floating pin */}
             <div className="absolute top-0 left-[48%] -translate-x-1/2 bg-[#0f172a] text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow-xl flex items-center gap-1 z-10">
               <span>3h 10m</span>
             </div>
@@ -366,7 +245,7 @@ export default function DashboardPage() {
                 onClick={() => setSelectedTx(activeCard)}
                 className="w-full bg-white text-zinc-900 rounded-3xl p-5 shadow-2xl border border-white space-y-4 relative z-10 cursor-pointer hover:scale-[1.01] transition-transform"
               >
-                {/* Pill Badges (Feedback, Bug, Design System style) */}
+                {/* Pill Badges */}
                 <div className="flex items-center gap-2 flex-wrap text-[11px] font-extrabold">
                   <span className="px-3 py-1 rounded-full bg-[#dcfce7] text-emerald-800">
                     Feedback
@@ -387,7 +266,7 @@ export default function DashboardPage() {
                   <p className="text-xs text-zinc-400 font-mono mt-0.5">21.03.22</p>
                 </div>
 
-                {/* Micro Meta Footer (Avatars + Comments + Files) */}
+                {/* Micro Meta Footer */}
                 <div className="pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
                   <div className="flex items-center -space-x-2">
                     <div className="w-6 h-6 rounded-full bg-purple-200 border-2 border-white flex items-center justify-center font-extrabold text-[10px] text-purple-900">
@@ -418,7 +297,7 @@ export default function DashboardPage() {
             <div className="absolute top-2 left-4 right-8 h-full bg-slate-800/80 rounded-3xl -z-10 scale-[0.96]" />
             <div className="absolute top-4 left-8 right-12 h-full bg-slate-800/50 rounded-3xl -z-20 scale-[0.92]" />
 
-            {/* Next Arrow Floating Circle Button on Right Edge */}
+            {/* Next Arrow Floating Circle Button */}
             <button
               onClick={handleNextCarousel}
               className="w-10 h-10 rounded-full bg-white text-zinc-900 shadow-xl flex items-center justify-center hover:bg-zinc-100 transition-colors shrink-0 z-20 cursor-pointer border border-zinc-200 ml-2"
@@ -429,7 +308,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 4. Transaction Detail Modal (Frosted Glass Overlay) ── */}
+      {/* ── 3. Transaction Detail Modal (Frosted Glass Overlay) ── */}
       {selectedTx && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs font-sans animate-fade-in">
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-100 max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">

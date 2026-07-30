@@ -226,15 +226,15 @@ export function PosSidebar() {
 
 // ── 2. ExecutiveSidebar (Matching BRESS Layout with Dynamic Cafe Settings) ──
 export function ExecutiveSidebar() {
-  const { user, logout } = useAuthStore();
   const { namaCafe, logoUrl } = useSettingsStore();
   const location = useLocation();
+  const { user } = useAuthStore();
 
   const userRole = user?.role || 'kasir';
   const allNavItems = navGroups.flatMap((g) => g.items).filter((item) => !item.roles || item.roles.includes(userRole as any));
 
   return (
-    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-hidden">
+    <aside className="hidden lg:flex w-64 bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex-col justify-between shrink-0 font-sans h-full overflow-y-auto">
       <div className="space-y-6">
         {/* Brand Header with Dynamic Cafe Settings */}
         <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">
@@ -271,28 +271,6 @@ export function ExecutiveSidebar() {
           })}
         </nav>
       </div>
-
-      {/* User Profile Pill at Bottom (Matching BRESS Emily Jonson Avatar Card) */}
-      {user && (
-        <div className="pt-4 border-t border-zinc-100 flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center font-extrabold text-amber-900 text-sm shrink-0 shadow-xs">
-              {user.nama.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-extrabold text-zinc-900 truncate">{user.nama}</p>
-              <p className="text-[11px] text-zinc-400 truncate">{user.email}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => logout()}
-            title="Logout"
-            className="p-1.5 rounded-full text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
-          >
-            <SignOut size={16} />
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
