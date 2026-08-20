@@ -42,6 +42,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function AdminOrManagerGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
   if (user?.role !== 'manager' && user?.role !== 'super_admin') {
+    if (user?.role === 'dapur') return <Navigate to="/kds" replace />;
     return <Navigate to="/pos" replace />;
   }
   return <>{children}</>;
@@ -49,7 +50,7 @@ function AdminOrManagerGuard({ children }: { children: React.ReactNode }) {
 
 function AppInit({ children }: { children: React.ReactNode }) {
   const { loadFromStorage: loadAuth } = useAuthStore();
-  const { loadFromStorage: loadSettings } = useSettingsStore();
+  const { loadFromStorage: loadSettings, namaCafe, logoUrl } = useSettingsStore();
   const { loadFromStorage: loadGateway } = usePaymentGatewayStore();
 
   useEffect(() => {
@@ -61,11 +62,29 @@ function AppInit({ children }: { children: React.ReactNode }) {
     return cleanup;
   }, [loadAuth, loadSettings, loadGateway]);
 
+  // Dynamically update browser tab title and favicon
+  useEffect(() => {
+    if (namaCafe && namaCafe.trim()) {
+      document.title = namaCafe.trim();
+    }
+    if (logoUrl && logoUrl.trim()) {
+      let favicon = document.getElementById('app-favicon') as HTMLLinkElement | null;
+      if (!favicon) {
+        favicon = document.createElement('link');
+        favicon.id = 'app-favicon';
+        favicon.rel = 'icon';
+        document.head.appendChild(favicon);
+      }
+      favicon.href = logoUrl;
+    }
+  }, [namaCafe, logoUrl]);
+
   return <>{children}</>;
 }
 
 function RootRedirect() {
   const { user } = useAuthStore();
+  if (user?.role === 'dapur') return <Navigate to="/kds" replace />;
   if (user?.role === 'kasir') return <Navigate to="/pos" replace />;
   return <Navigate to="/dashboard" replace />;
 }

@@ -27,8 +27,8 @@ userRouter.get('/', authenticate, authorize('super_admin', 'manager'), async (_r
   }
 });
 
-// ─── POST /api/users — create user (super_admin only) ─────────
-userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
+// ─── POST /api/users — create user (super_admin & manager) ─────────
+userRouter.post('/', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
     let { email, username, password, nama, role } = req.body;
 
@@ -37,8 +37,8 @@ userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthReq
       return;
     }
 
-    if (!['kasir', 'manager', 'super_admin'].includes(role)) {
-      res.status(400).json({ error: 'Role tidak valid (kasir, manager, super_admin)' });
+    if (!['kasir', 'dapur', 'manager', 'super_admin'].includes(role)) {
+      res.status(400).json({ error: 'Role tidak valid (kasir, dapur, manager, super_admin)' });
       return;
     }
 
@@ -77,7 +77,7 @@ userRouter.post('/', authenticate, authorize('super_admin'), async (req: AuthReq
 });
 
 // ─── PUT /api/users/:id — update status or user details ─────────
-userRouter.put('/:id', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
+userRouter.put('/:id', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { isActive, nama, role, password } = req.body;
@@ -109,7 +109,7 @@ userRouter.put('/:id', authenticate, authorize('super_admin'), async (req: AuthR
 });
 
 // ─── POST /api/users/:id/reset-password ───────────────────────
-userRouter.post('/:id/reset-password', authenticate, authorize('super_admin'), async (req: AuthRequest, res: Response) => {
+userRouter.post('/:id/reset-password', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { newPassword } = req.body;

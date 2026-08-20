@@ -204,22 +204,27 @@ export default function PosPage() {
               >
                 Tanpa Meja
               </button>
-              {tables.map((t: any) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTableId(t.id)}
-                  disabled={t.status === 'terisi' && tableId !== t.id}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                    tableId === t.id
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : t.status === 'terisi'
-                      ? 'bg-red-50 text-red-500 border border-red-200'
-                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border border-zinc-200'
-                  }`}
-                >
-                  {t.nomorMeja}
-                </button>
-              ))}
+              {tables.map((t: any) => {
+                const isOccupied = t.status === 'terisi';
+                const isSelected = tableId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTableId(isSelected ? null : t.id)}
+                    title={`Meja ${t.nomorMeja}${isOccupied ? ' (Sedang Terisi)' : ' (Kosong)'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer border ${
+                      isSelected
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : isOccupied
+                        ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
+                        : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 border-zinc-200'
+                    }`}
+                  >
+                    {t.nomorMeja}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

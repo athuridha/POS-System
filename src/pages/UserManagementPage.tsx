@@ -175,6 +175,13 @@ function RoleBadge({ role }: { role: string }) {
       </span>
     );
   }
+  if (role === 'dapur') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+        Dapur / Barista
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
       Kasir
@@ -187,7 +194,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'manager' | 'kasir'>('kasir');
+  const [role, setRole] = useState<'manager' | 'kasir' | 'dapur'>('kasir');
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
 
@@ -207,18 +214,18 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 backdrop-blur-xs p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl animate-slide-up border border-zinc-200 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-zinc-200">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-200 bg-zinc-50">
           <h3 className="text-base font-bold text-zinc-900">Tambah User Baru</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="p-4 space-y-4">
-          {error && <div className="p-3 rounded-xl bg-red-50 text-red-700 text-sm font-medium">{error}</div>}
+        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="p-5 space-y-4">
+          {error && <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-semibold border border-red-200">{error}</div>}
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1">Nama Lengkap</label>
+            <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
             <input
               type="text"
               value={nama}
@@ -231,7 +238,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-zinc-700 mb-1">Username</label>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Username</label>
               <input
                 type="text"
                 value={username}
@@ -241,7 +248,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-zinc-700 mb-1">Email <span className="text-zinc-400 text-xs font-normal">(Opsional)</span></label>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Email <span className="text-zinc-400 text-xs font-normal">(Opsional)</span></label>
               <input
                 type="email"
                 value={email}
@@ -253,7 +260,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1">Password</label>
+            <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Password</label>
             <input
               type="password"
               value={password}
@@ -266,14 +273,14 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1">Role / Hak Akses</label>
-            <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">Role / Hak Akses</label>
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setRole('kasir')}
-                className={`py-2.5 px-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
+                className={`py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   role === 'kasir'
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-xs'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700 shadow-xs ring-1 ring-emerald-600'
                     : 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
                 }`}
               >
@@ -281,10 +288,21 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
               </button>
               <button
                 type="button"
+                onClick={() => setRole('dapur')}
+                className={`py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  role === 'dapur'
+                    ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-xs ring-1 ring-amber-600'
+                    : 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
+                }`}
+              >
+                Dapur
+              </button>
+              <button
+                type="button"
                 onClick={() => setRole('manager')}
-                className={`py-2.5 px-3 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
+                className={`py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                   role === 'manager'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-xs'
+                    ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-xs ring-1 ring-blue-600'
                     : 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50'
                 }`}
               >

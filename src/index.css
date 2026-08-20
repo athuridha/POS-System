@@ -53,31 +53,24 @@
   scrollbar-width: none;
 }
 
-/* ─── Print Styles for Thermal Receipt Printer ─────────────── */
+/* ─── Global Print Styles (Receipt & Table QR) ───────────────── */
 @media print {
-  @page {
-    size: 80mm auto;
-    margin: 0mm;
-  }
-
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
-    width: 80mm !important;
-    max-width: 80mm !important;
   }
 
-  /* Hide all app UI during receipt print */
+  /* Hide all app layouts during print */
   body * {
     visibility: hidden;
   }
 
+  /* 1. Thermal Receipt Print */
   #thermal-receipt, #thermal-receipt * {
     visibility: visible;
   }
-
   #thermal-receipt {
     position: absolute;
     left: 0;
@@ -86,5 +79,41 @@
     max-width: 80mm !important;
     margin: 0 !important;
     padding: 2mm !important;
+  }
+
+  /* 2. Single Table QR Print */
+  #printable-table-qr, #printable-table-qr * {
+    visibility: visible;
+  }
+  #printable-table-qr {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    z-index: 99999 !important;
+  }
+
+  /* 3. Bulk All Table QRs Print (A4 Grid) */
+  #printable-all-qrs, #printable-all-qrs * {
+    visibility: visible;
+  }
+  #printable-all-qrs {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    display: block !important;
+    background: #ffffff !important;
+    z-index: 99999 !important;
   }
 }

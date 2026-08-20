@@ -58,11 +58,36 @@ const DEFAULT_DOKU: DokuConfig = {
   environment: 'sandbox',
 };
 
+function getInitialGatewaySettings(): {
+  activeProvider: GatewayProvider;
+  midtrans: MidtransConfig;
+  xendit: XenditConfig;
+  doku: DokuConfig;
+} {
+  try {
+    const saved = localStorage.getItem('paymentGatewaySettings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        activeProvider: parsed.activeProvider || 'none',
+        midtrans: { ...DEFAULT_MIDTRANS, ...parsed.midtrans },
+        xendit: { ...DEFAULT_XENDIT, ...parsed.xendit },
+        doku: { ...DEFAULT_DOKU, ...parsed.doku },
+      };
+    }
+  } catch (err) {
+    console.warn('Failed to parse paymentGatewaySettings:', err);
+  }
+  return {
+    activeProvider: 'none',
+    midtrans: DEFAULT_MIDTRANS,
+    xendit: DEFAULT_XENDIT,
+    doku: DEFAULT_DOKU,
+  };
+}
+
 export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => ({
-  activeProvider: 'none',
-  midtrans: DEFAULT_MIDTRANS,
-  xendit: DEFAULT_XENDIT,
-  doku: DEFAULT_DOKU,
+  ...getInitialGatewaySettings(),
 
   updateActiveProvider: (provider) => {
     set({ activeProvider: provider });
@@ -94,18 +119,7 @@ export const usePaymentGatewayStore = create<PaymentGatewayState>((set, get) => 
   },
 
   loadFromStorage: () => {
-    const saved = localStorage.getItem('paymentGatewaySettings');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        set({
-          activeProvider: parsed.activeProvider || 'none',
-          midtrans: { ...DEFAULT_MIDTRANS, ...parsed.midtrans },
-          xendit: { ...DEFAULT_XENDIT, ...parsed.xendit },
-          doku: { ...DEFAULT_DOKU, ...parsed.doku },
-        });
-      } catch {}
-    }
+    set(getInitialGatewaySettings());
   },
 }));
 

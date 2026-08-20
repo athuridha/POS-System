@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeSlash, CircleNotch, Storefront } from '@phosphor-icons/react';
 import api from '../lib/api';
@@ -13,9 +13,21 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuthStore();
+  const { login, isAuthenticated, user: currentUser } = useAuthStore();
   const { logoUrl, namaCafe } = useSettingsStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      if (currentUser.role === 'dapur') {
+        navigate('/kds', { replace: true });
+      } else if (currentUser.role === 'kasir') {
+        navigate('/pos', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +37,9 @@ export default function LoginPage() {
     try {
       const { data } = await api.post<AuthResponse>('/auth/login', { username, email: username, password });
       login(data.user, data.accessToken, data.refreshToken);
-      if (data.user.role === 'kasir') {
+      if (data.user.role === 'dapur') {
+        navigate('/kds');
+      } else if (data.user.role === 'kasir') {
         navigate('/pos');
       } else {
         navigate('/dashboard');
@@ -137,28 +151,35 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Quick Demo Login Accounts (3 Separate Role Buttons) */}
+          {/* Quick Demo Login Accounts (4 Role Buttons) */}
           <div className="pt-3 border-t border-zinc-100 space-y-2">
             <p className="text-[11px] font-extrabold text-center text-zinc-400 uppercase tracking-wider">Demo Akun Cepat</p>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => { setUsername('kasir1'); setPassword('kasir123'); }}
-                className="py-2 px-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
+                className="py-2 px-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-xs font-bold transition-all text-center cursor-pointer active:scale-95 shadow-xs"
               >
                 Kasir
               </button>
               <button
                 type="button"
+                onClick={() => { setUsername('dapur'); setPassword('dapur123'); }}
+                className="py-2 px-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all text-center cursor-pointer active:scale-95 shadow-xs"
+              >
+                Dapur / KDS
+              </button>
+              <button
+                type="button"
                 onClick={() => { setUsername('manager'); setPassword('manager123'); }}
-                className="py-2 px-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
+                className="py-2 px-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 text-xs font-bold transition-all text-center cursor-pointer active:scale-95 shadow-xs"
               >
                 Manager
               </button>
               <button
                 type="button"
                 onClick={() => { setUsername('superadmin'); setPassword('admin123'); }}
-                className="py-2 px-2 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 text-[11px] font-extrabold transition-all text-center cursor-pointer active:scale-95"
+                className="py-2 px-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 text-xs font-bold transition-all text-center cursor-pointer active:scale-95 shadow-xs"
               >
                 Super Admin
               </button>

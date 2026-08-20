@@ -324,6 +324,13 @@ transactionRouter.patch('/:id/pay', authenticate, authorize('kasir', 'manager'),
       },
     });
 
+    if (existingTx.tableId) {
+      await prisma.table.update({
+        where: { id: existingTx.tableId },
+        data: { status: 'kosong' },
+      });
+    }
+
     res.json({ transaction, message: 'Pembayaran berhasil diselesaikan' });
   } catch (err) {
     console.error('Pay transaction error:', err);

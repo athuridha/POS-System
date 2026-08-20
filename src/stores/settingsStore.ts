@@ -23,8 +23,28 @@ const DEFAULT_SETTINGS: CafeSettings = {
   logoUrl: 'https://placehold.co/120x120/10b981/ffffff?text=POS+Cafe',
 };
 
+function getInitialSettings(): CafeSettings {
+  try {
+    const saved = localStorage.getItem('cafeSettings');
+    if (saved) {
+      const parsed = JSON.parse(saved) as Partial<CafeSettings>;
+      return {
+        namaCafe: parsed.namaCafe || DEFAULT_SETTINGS.namaCafe,
+        alamatCafe: parsed.alamatCafe || DEFAULT_SETTINGS.alamatCafe,
+        teleponCafe: parsed.teleponCafe || DEFAULT_SETTINGS.teleponCafe,
+        footerPesan: parsed.footerPesan || DEFAULT_SETTINGS.footerPesan,
+        ukuranStruk: parsed.ukuranStruk || DEFAULT_SETTINGS.ukuranStruk,
+        logoUrl: parsed.logoUrl || DEFAULT_SETTINGS.logoUrl,
+      };
+    }
+  } catch (err) {
+    console.warn('Failed to parse settings from localStorage:', err);
+  }
+  return DEFAULT_SETTINGS;
+}
+
 export const useSettingsStore = create<SettingsState>((set) => ({
-  ...DEFAULT_SETTINGS,
+  ...getInitialSettings(),
 
   updateSettings: (newSettings) => {
     set((state) => {
@@ -47,19 +67,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
 
   loadFromStorage: () => {
-    const saved = localStorage.getItem('cafeSettings');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as CafeSettings;
-        set({
-          namaCafe: parsed.namaCafe || DEFAULT_SETTINGS.namaCafe,
-          alamatCafe: parsed.alamatCafe || DEFAULT_SETTINGS.alamatCafe,
-          teleponCafe: parsed.teleponCafe || DEFAULT_SETTINGS.teleponCafe,
-          footerPesan: parsed.footerPesan || DEFAULT_SETTINGS.footerPesan,
-          ukuranStruk: parsed.ukuranStruk || DEFAULT_SETTINGS.ukuranStruk,
-          logoUrl: parsed.logoUrl || DEFAULT_SETTINGS.logoUrl,
-        });
-      } catch {}
-    }
+    set(getInitialSettings());
   },
 }));

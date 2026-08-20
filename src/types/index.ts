@@ -3,7 +3,7 @@ export interface User {
   id: string;
   email: string;
   nama: string;
-  role: 'kasir' | 'manager' | 'super_admin';
+  role: 'kasir' | 'dapur' | 'manager' | 'super_admin';
   isActive?: boolean;
 }
 

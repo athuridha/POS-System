@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle,
@@ -15,14 +16,36 @@ import {
   Coffee,
   Table as TableIcon,
 } from '@phosphor-icons/react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import api from '../lib/api';
 import { formatRupiah, formatDateTime } from '../lib/utils';
 import type { Transaction } from '../types';
 
+interface DashboardContextType {
+  dateFilter?: 'today' | '7days' | '30days' | 'all';
+  headerSearch?: string;
+}
+
 export default function DashboardPage() {
+  const context = useOutletContext<DashboardContextType>() || {};
+  const dateFilter = context.dateFilter || 'all';
+  const headerSearch = context.headerSearch || '';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [chartPeriod, setChartPeriod] = useState<'today' | '7days' | '30days' | 'all' | null>(null);
+  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
+
+  const effectiveChartPeriod = chartPeriod || dateFilter || 'all';
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-transactions'],
@@ -33,7 +56,26 @@ export default function DashboardPage() {
     refetchInterval: 5000,
   });
 
-  const transactions: Transaction[] = data?.transactions || [];
+  const rawTransactions: Transaction[] = data?.transactions || [];
+
+  // Filter transactions based on dateFilter from header (Today, 7 Days, 30 Days, All)
+  const transactions = useMemo(() => {
+    if (dateFilter === 'all') return rawTransactions;
+    const now = new Date();
+    if (dateFilter === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      return rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= startOfDay);
+    }
+    if (dateFilter === '7days') {
+      const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      return rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= sevenDaysAgo);
+    }
+    if (dateFilter === '30days') {
+      const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      return rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= thirtyDaysAgo);
+    }
+    return rawTransactions;
+  }, [rawTransactions, dateFilter]);
 
   // Real DB Paid & Unpaid filter
   const paidTx = useMemo(() => {
@@ -72,6 +114,72 @@ export default function DashboardPage() {
     return sorted[0] || null;
   }, [transactions]);
 
+  // ─── Real Database Hourly Peak Calculation ──────────────────────
+  const { hourlyData, peakHourSummary } = useMemo(() => {
+    const hourBuckets = [
+      { slot: '08:00', startH: 7, endH: 9, orders: 0, omset: 0 },
+      { slot: '10:00', startH: 9, endH: 11, orders: 0, omset: 0 },
+      { slot: '12:00', startH: 11, endH: 13, orders: 0, omset: 0 },
+      { slot: '14:00', startH: 13, endH: 15, orders: 0, omset: 0 },
+      { slot: '16:00', startH: 15, endH: 17, orders: 0, omset: 0 },
+      { slot: '18:00', startH: 17, endH: 19, orders: 0, omset: 0 },
+      { slot: '20:00', startH: 19, endH: 21, orders: 0, omset: 0 },
+      { slot: '22:00', startH: 21, endH: 24, orders: 0, omset: 0 },
+    ];
+
+    let filteredForChart = rawTransactions;
+    const now = new Date();
+    if (effectiveChartPeriod === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      filteredForChart = rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= startOfDay);
+    } else if (effectiveChartPeriod === '7days') {
+      const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      filteredForChart = rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= sevenDaysAgo);
+    } else if (effectiveChartPeriod === '30days') {
+      const thirtyDaysAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      filteredForChart = rawTransactions.filter((t) => new Date(t.createdAt).getTime() >= thirtyDaysAgo);
+    }
+
+    filteredForChart.forEach((tx) => {
+      const d = new Date(tx.createdAt);
+      const h = d.getHours();
+      const bucket = hourBuckets.find((b) => h >= b.startH && h < b.endH) || hourBuckets[hourBuckets.length - 1];
+      bucket.orders += 1;
+      if (tx.status === 'paid') {
+        bucket.omset += tx.total || 0;
+      }
+    });
+
+    let maxBucket = hourBuckets[0];
+    hourBuckets.forEach((b) => {
+      if (b.orders > maxBucket.orders || (b.orders === maxBucket.orders && b.omset > maxBucket.omset)) {
+        maxBucket = b;
+      }
+    });
+
+    const summary = maxBucket.orders > 0
+      ? `Jam Puncak: ${maxBucket.slot} (${maxBucket.orders} Order • ${formatRupiah(maxBucket.omset)})`
+      : 'Jam Puncak: Belum Ada Data Order';
+
+    return {
+      hourlyData: hourBuckets.map((b) => ({
+        jam: b.slot,
+        orders: b.orders,
+        omset: b.omset,
+      })),
+      peakHourSummary: summary,
+    };
+  }, [rawTransactions, effectiveChartPeriod]);
+
+  const chartPeriodLabel = useMemo(() => {
+    if (effectiveChartPeriod === 'today') {
+      return `Hari Ini (${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })})`;
+    }
+    if (effectiveChartPeriod === '7days') return '7 Hari Terakhir';
+    if (effectiveChartPeriod === '30days') return '30 Hari Terakhir';
+    return 'Semua Waktu';
+  }, [effectiveChartPeriod]);
+
   // Unique Order ID Generator from DB Record
   const getOrderDisplayId = (tx: Transaction) => {
     if (tx.clientUuid === 'QR-ORDER' || !tx.clientUuid || tx.clientUuid.length < 8) {
@@ -81,18 +189,18 @@ export default function DashboardPage() {
   };
 
   const filteredTx = useMemo(() => {
-    if (!searchQuery) return transactions.slice(0, 5);
-    const q = searchQuery.toLowerCase();
+    const effectiveQuery = (headerSearch || searchQuery).toLowerCase().trim();
+    if (!effectiveQuery) return transactions.slice(0, 10);
     return transactions
       .filter(
         (t) =>
-          getOrderDisplayId(t).toLowerCase().includes(q) ||
-          t.clientUuid.toLowerCase().includes(q) ||
-          (t.shift?.kasir?.nama && t.shift.kasir.nama.toLowerCase().includes(q)) ||
-          (t.table?.nomorMeja && t.table.nomorMeja.toLowerCase().includes(q))
+          getOrderDisplayId(t).toLowerCase().includes(effectiveQuery) ||
+          t.clientUuid.toLowerCase().includes(effectiveQuery) ||
+          (t.shift?.kasir?.nama && t.shift.kasir.nama.toLowerCase().includes(effectiveQuery)) ||
+          (t.table?.nomorMeja && t.table.nomorMeja.toLowerCase().includes(effectiveQuery))
       )
-      .slice(0, 5);
-  }, [transactions, searchQuery]);
+      .slice(0, 10);
+  }, [transactions, searchQuery, headerSearch]);
 
   const activeOrders = useMemo(() => {
     return transactions.slice(0, 6);
@@ -287,7 +395,7 @@ export default function DashboardPage() {
       {/* ── 3. Bottom Row Grid (Peak Hours Analytics + Live Kitchen Order Stream) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Left Card: "Peak Hours Performance" Chart Widget (7 Columns) */}
-        <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-6 sm:p-8 shadow-sm border border-white flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h2 className="text-2xl font-black text-zinc-900 tracking-tight">Peak Hours Performance</h2>
@@ -301,54 +409,114 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-zinc-400">Pembaruan data jam sibuk</span>
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-100 text-zinc-700 text-xs font-bold border border-zinc-200/80 cursor-pointer">
-                <span>01-07 May</span>
-                <CaretDown size={11} className="text-zinc-400" />
-              </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200/80 text-zinc-800 text-xs font-bold border border-zinc-200/80 transition-colors cursor-pointer shadow-xs"
+              >
+                <span className="text-[11px] text-zinc-400 font-semibold">Periode:</span>
+                <span>{chartPeriodLabel}</span>
+                <CaretDown size={12} className={`text-zinc-500 transition-transform ${showPeriodDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showPeriodDropdown && (
+                <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-zinc-200 py-1.5 z-30 animate-fade-in text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => { setChartPeriod('today'); setShowPeriodDropdown(false); }}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-zinc-50 cursor-pointer ${effectiveChartPeriod === 'today' ? 'text-emerald-700 bg-emerald-50 font-extrabold' : 'text-zinc-700'}`}
+                  >
+                    Hari Ini
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChartPeriod('7days'); setShowPeriodDropdown(false); }}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-zinc-50 cursor-pointer ${effectiveChartPeriod === '7days' ? 'text-emerald-700 bg-emerald-50 font-extrabold' : 'text-zinc-700'}`}
+                  >
+                    7 Hari Terakhir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChartPeriod('30days'); setShowPeriodDropdown(false); }}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-zinc-50 cursor-pointer ${effectiveChartPeriod === '30days' ? 'text-emerald-700 bg-emerald-50 font-extrabold' : 'text-zinc-700'}`}
+                  >
+                    30 Hari Terakhir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setChartPeriod('all'); setShowPeriodDropdown(false); }}
+                    className={`w-full text-left px-3.5 py-2 hover:bg-zinc-50 cursor-pointer ${effectiveChartPeriod === 'all' ? 'text-emerald-700 bg-emerald-50 font-extrabold' : 'text-zinc-700'}`}
+                  >
+                    Semua Waktu
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* SVG Line Graph */}
-          <div className="relative pt-6 pb-2">
-            <div className="absolute top-0 left-[48%] -translate-x-1/2 bg-[#0f172a] text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow-xl flex items-center gap-1 z-10">
-              <span>Jam Puncak: 14:00 (Lunch & Coffee Rush)</span>
+          {/* Dynamic Peak Hour Highlight Pill */}
+          <div className="flex items-center justify-center pt-1">
+            <div className="bg-[#0f172a] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-xl shadow-md flex items-center gap-1.5">
+              <span>{peakHourSummary}</span>
             </div>
+          </div>
 
-            <svg className="w-full h-44 overflow-visible" viewBox="0 0 500 150" fill="none">
-              <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" strokeWidth="1.5" strokeDasharray="4 4" />
-              <line x1="0" y1="70" x2="500" y2="70" stroke="#f1f5f9" strokeWidth="1.5" strokeDasharray="4 4" />
-              <line x1="0" y1="110" x2="500" y2="110" stroke="#f1f5f9" strokeWidth="1.5" strokeDasharray="4 4" />
-
-              <line x1="240" y1="35" x2="240" y2="135" stroke="#38bdf8" strokeWidth="1.5" strokeDasharray="3 3" />
-              <circle cx="240" cy="35" r="4.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="2.5" />
-
-              <path
-                d="M0,110 Q75,135 150,65 T300,35 T450,75 T500,55"
-                fill="none"
-                stroke="#0ea5e9"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-              />
-
-              <path
-                d="M0,130 Q75,145 150,110 T300,85 T450,115 T500,95"
-                fill="none"
-                stroke="#9333ea"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            <div className="flex justify-between text-xs font-bold text-zinc-400 mt-2 px-1 font-mono">
-              <span>08:00</span>
-              <span>11:00</span>
-              <span className="text-zinc-900 font-extrabold">14:00</span>
-              <span>17:00</span>
-              <span>20:00</span>
-              <span>22:00</span>
-            </div>
+          {/* Real Dynamic Recharts Area Chart */}
+          <div className="w-full h-52 pt-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="orderGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="omsetGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#9333ea" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#9333ea" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="jam" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} stroke="#e2e8f0" tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#0ea5e9', fontWeight: 700 }} stroke="#e2e8f0" tickLine={false} allowDecimals={false} />
+                <YAxis yAxisId="right" orientation="right" hide />
+                <Tooltip
+                  formatter={(value: any, name: any) => {
+                    if (name === 'Volume Order') return [`${value} Transaksi`, 'Volume Order'];
+                    return [formatRupiah(Number(value) || 0), 'Omset'];
+                  }}
+                  contentStyle={{
+                    borderRadius: '16px',
+                    backgroundColor: '#0f172a',
+                    border: 'none',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
+                  }}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="orders"
+                  name="Volume Order"
+                  stroke="#0ea5e9"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#orderGradient)"
+                />
+                <Area
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="omset"
+                  name="Omset"
+                  stroke="#9333ea"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#omsetGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

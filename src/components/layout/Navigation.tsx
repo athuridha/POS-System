@@ -29,7 +29,7 @@ export interface NavItem {
   to: string;
   label: string;
   icon: any;
-  roles?: ('kasir' | 'manager' | 'super_admin')[];
+  roles?: ('kasir' | 'dapur' | 'manager' | 'super_admin')[];
   badge?: string | number;
 }
 
@@ -43,16 +43,21 @@ export const navGroups: NavGroup[] = [
     title: 'MAIN ANALYTICS',
     items: [
       { to: '/dashboard', label: 'Dashboard Peak', icon: ChartBar, roles: ['manager', 'super_admin'] },
+      { to: '/reports', label: 'Laporan Penjualan', icon: ChartBar, roles: ['manager', 'super_admin'] },
     ],
   },
   {
-    title: 'OPERASIONAL',
+    title: 'OPERASIONAL KASIR',
     items: [
-      { to: '/pos', label: 'Kasir', icon: Storefront, roles: ['kasir', 'manager', 'super_admin'] },
-      { to: '/kds', label: 'KDS Dapur', icon: Coffee, roles: ['kasir', 'manager', 'super_admin'] },
-      { to: '/table-qr', label: 'QR Meja', icon: QrCode, roles: ['manager', 'super_admin'] },
+      { to: '/pos', label: 'Kasir POS', icon: Storefront, roles: ['kasir', 'super_admin'] },
       { to: '/shifts', label: 'Shift Kasir', icon: Clock, roles: ['kasir', 'manager', 'super_admin'] },
       { to: '/history', label: 'Riwayat Transaksi', icon: Receipt, roles: ['kasir', 'manager', 'super_admin'] },
+    ],
+  },
+  {
+    title: 'DAPUR & BARISTA',
+    items: [
+      { to: '/kds', label: 'KDS Dapur', icon: Coffee, roles: ['dapur', 'super_admin'] },
     ],
   },
   {
@@ -60,16 +65,16 @@ export const navGroups: NavGroup[] = [
     items: [
       { to: '/menu', label: 'Menu & Varian', icon: ForkKnife, roles: ['manager', 'super_admin'] },
       { to: '/tables', label: 'Meja Cafe', icon: TableIcon, roles: ['manager', 'super_admin'] },
+      { to: '/table-qr', label: 'QR Meja', icon: QrCode, roles: ['manager', 'super_admin'] },
       { to: '/discounts', label: 'Voucher & Diskon', icon: Tag, roles: ['manager', 'super_admin'] },
-      { to: '/users', label: 'User / Pengguna', icon: UsersThree, roles: ['super_admin'] },
+      { to: '/users', label: 'User & Staf', icon: UsersThree, roles: ['manager', 'super_admin'] },
     ],
   },
   {
-    title: 'LAPORAN & SISTEM',
+    title: 'PENGATURAN & SISTEM',
     items: [
-      { to: '/reports', label: 'Laporan Penjualan', icon: ChartBar, roles: ['manager', 'super_admin'] },
-      { to: '/payment-gateway', label: 'Payment Gateway', icon: CreditCard, roles: ['manager', 'super_admin'] },
       { to: '/settings', label: 'Pengaturan Struk', icon: Gear, roles: ['manager', 'super_admin'] },
+      { to: '/payment-gateway', label: 'Payment Gateway', icon: CreditCard, roles: ['manager', 'super_admin'] },
     ],
   },
 ];
@@ -134,9 +139,9 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
                         <Icon size={18} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
                         <span>{item.label}</span>
                       </div>
-                      {item.to === '/table-qr' && (
+                      {item.badge && (
                         <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
-                          2
+                          {item.badge}
                         </span>
                       )}
                     </Link>
@@ -174,7 +179,7 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
 
 // ── 1. PosSidebar for Kasir Operational View ──
 export function PosSidebar() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const location = useLocation();
 
   const userRole = user?.role || 'kasir';
@@ -186,7 +191,7 @@ export function PosSidebar() {
     .filter((group) => group.items.length > 0);
 
   return (
-    <aside className="hidden lg:flex w-52 border-r border-zinc-200 bg-white flex-col justify-between py-3 px-2 shrink-0 font-sans">
+    <aside className="hidden lg:flex w-52 border-r border-zinc-200 bg-white flex-col justify-between py-3 px-2 shrink-0 font-sans overflow-y-auto">
       <div className="space-y-3">
         {filteredGroups.map((group) => (
           <div key={group.title} className="space-y-1">
@@ -216,27 +221,6 @@ export function PosSidebar() {
           </div>
         ))}
       </div>
-
-      {user && (
-        <div className="p-2 border-t border-zinc-100 flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
-              {user.nama.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-zinc-900 truncate">{user.nama}</p>
-              <p className="text-[10px] text-zinc-400 capitalize">{userRole.replace('_', ' ')}</p>
-            </div>
-          </div>
-          <button
-            onClick={() => logout()}
-            title="Logout"
-            className="p-1 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
-          >
-            <SignOut size={16} />
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
@@ -289,9 +273,9 @@ export function ExecutiveSidebar() {
                         <Icon size={17} weight={isActive ? 'bold' : 'regular'} className={isActive ? 'text-white' : 'text-zinc-400'} />
                         <span>{item.label}</span>
                       </div>
-                      {item.to === '/table-qr' && (
+                      {item.badge && (
                         <span className="bg-[#bbf7d0] text-emerald-950 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
-                          2
+                          {item.badge}
                         </span>
                       )}
                     </Link>
