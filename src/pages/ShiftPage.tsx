@@ -13,7 +13,7 @@ import {
   SignOut,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
-import { formatRupiah, formatDateTime } from '../lib/utils';
+import { formatRupiah, formatDateTime, getErrorMessage } from '../lib/utils';
 import type { Shift } from '../types';
 
 export default function ShiftPage() {
@@ -185,7 +185,7 @@ function CloseShiftModal({ shift, onClose }: { shift: Shift; onClose: () => void
       onClose();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal menutup shift kasir');
+      setError(getErrorMessage(err, 'Gagal menutup shift kasir'));
     },
   });
 

@@ -79,3 +79,17 @@ export function orderTypeLabel(type: string): string {
   };
   return labels[type] || type;
 }
+
+/** Extract safe error message string from axios / fetch / unknown errors */
+export function getErrorMessage(err: any, fallback = 'Terjadi kesalahan sistem'): string {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  const data = err.response?.data;
+  if (typeof data === 'string') return data;
+  if (typeof data?.error === 'string') return data.error;
+  if (typeof data?.error?.message === 'string') return data.error.message;
+  if (typeof data?.message === 'string') return data.message;
+  if (typeof err.message === 'string') return err.message;
+  return fallback;
+}
+

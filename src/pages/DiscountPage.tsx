@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, PencilSimple, Trash, CircleNotch, X, Check, Tag } from '@phosphor-icons/react';
 import api from '../lib/api';
-import { formatRupiah } from '../lib/utils';
+import { formatRupiah, getErrorMessage } from '../lib/utils';
 import type { Discount } from '../types';
 
 export default function DiscountPage() {
@@ -123,7 +123,7 @@ function DiscountFormModal({ discount, onClose }: { discount: Discount | null; o
       queryClient.invalidateQueries({ queryKey: ['discounts'] });
       onClose();
     },
-    onError: (err: any) => setError(err.response?.data?.error || 'Gagal menyimpan diskon'),
+    onError: (err: any) => setError(getErrorMessage(err, 'Gagal menyimpan diskon')),
   });
 
   return (

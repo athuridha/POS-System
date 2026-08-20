@@ -23,7 +23,7 @@ import { saveOfflineTransaction } from '../../lib/db';
 import { useCartStore } from '../../stores/cartStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { usePaymentGatewayStore } from '../../stores/paymentGatewayStore';
-import { formatRupiah, paymentMethodLabel } from '../../lib/utils';
+import { formatRupiah, paymentMethodLabel, getErrorMessage } from '../../lib/utils';
 import type { Shift, MetodePembayaran } from '../../types';
 import { ThermalReceipt, ThermalReceiptData } from './ThermalReceipt';
 import { useAuthStore } from '../../stores/authStore';
@@ -345,7 +345,7 @@ export default function PaymentModal({ activeShift, onClose }: Props) {
         setCompletedTx({ clientUuid, total, offline: true });
         setStep('success');
       } catch {
-        setError(err.response?.data?.error || 'Gagal memproses pembayaran');
+        setError(getErrorMessage(err, 'Gagal memproses pembayaran'));
       }
     } finally {
       setLoading(false);

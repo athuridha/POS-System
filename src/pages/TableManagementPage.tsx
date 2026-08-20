@@ -13,6 +13,7 @@ import {
   ArrowsClockwise,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 import type { Table } from '../types';
 
 export default function TableManagementPage() {
@@ -299,7 +300,7 @@ function TableFormModal({ table, onClose }: { table: Table | null; onClose: () =
       onClose();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal menyimpan data meja');
+      setError(getErrorMessage(err, 'Gagal menyimpan data meja'));
     },
   });
 

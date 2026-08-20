@@ -13,7 +13,7 @@ import {
   Sparkle,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
-import { formatRupiah } from '../lib/utils';
+import { formatRupiah, getErrorMessage } from '../lib/utils';
 import type { Category, Product } from '../types';
 
 export default function MenuManagementPage() {
@@ -325,7 +325,7 @@ function ProductFormModal({
       onClose();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal menyimpan produk');
+      setError(getErrorMessage(err, 'Gagal menyimpan produk'));
     },
   });
 
@@ -505,7 +505,7 @@ function CategoryFormModal({ category, onClose }: { category: Category | null; o
       onClose();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal menyimpan kategori');
+      setError(getErrorMessage(err, 'Gagal menyimpan kategori'));
     },
   });
 

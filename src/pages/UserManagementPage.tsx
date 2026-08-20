@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, CircleNotch, X, Check, Key, ShieldCheck, UserCheck, UserPlus } from '@phosphor-icons/react';
 import api from '../lib/api';
-import { formatDate } from '../lib/utils';
+import { formatDate, getErrorMessage } from '../lib/utils';
 import type { User } from '../types';
 import { useAuthStore } from '../stores/authStore';
 
@@ -207,7 +207,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
       onClose();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal membuat user baru');
+      setError(getErrorMessage(err, 'Gagal membuat user baru'));
     },
   });
 
@@ -338,7 +338,7 @@ function ResetPasswordModal({ user, onClose }: { user: User; onClose: () => void
       setTimeout(() => onClose(), 1500);
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Gagal reset password');
+      setError(getErrorMessage(err, 'Gagal reset password'));
     },
   });
 

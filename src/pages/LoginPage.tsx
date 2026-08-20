@@ -4,6 +4,7 @@ import { User, Lock, Eye, EyeSlash, CircleNotch, Storefront } from '@phosphor-ic
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 import { useSettingsStore } from '../stores/settingsStore';
+import { formatRupiah, getErrorMessage } from '../lib/utils';
 import type { AuthResponse } from '../types';
 
 export default function LoginPage() {
@@ -45,7 +46,7 @@ export default function LoginPage() {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Gagal login. Cek koneksi server.');
+      setError(getErrorMessage(err, 'Gagal login. Cek koneksi database atau server.'));
     } finally {
       setLoading(false);
     }

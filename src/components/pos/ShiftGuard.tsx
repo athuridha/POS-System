@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, CurrencyCircleDollar, ArrowRight, CircleNotch } from '@phosphor-icons/react';
 import api from '../../lib/api';
-import { formatRupiah } from '../../lib/utils';
+import { formatRupiah, getErrorMessage } from '../../lib/utils';
 import type { Shift } from '../../types';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -99,7 +99,7 @@ export default function ShiftGuard({ onShiftActive }: Props) {
       localStorage.setItem('activeShift', JSON.stringify(data.shift));
       onShiftActive(data.shift);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Gagal membuka shift');
+      setError(getErrorMessage(err, 'Gagal membuka shift'));
     } finally {
       setOpening(false);
     }
