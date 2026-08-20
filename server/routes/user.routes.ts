@@ -6,7 +6,7 @@ import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 export const userRouter = Router();
 
 // ─── GET /api/users — list all users ─────────────────────────
-userRouter.get('/', authenticate, authorize('super_admin', 'manager'), async (_req: AuthRequest, res: Response) => {
+userRouter.get('/', authenticate, authorize('super_admin', 'manager') as any, async (_req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -28,7 +28,7 @@ userRouter.get('/', authenticate, authorize('super_admin', 'manager'), async (_r
 });
 
 // ─── POST /api/users — create user (super_admin & manager) ─────────
-userRouter.post('/', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
+userRouter.post('/', authenticate, authorize('super_admin', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     let { email, username, password, nama, role } = req.body;
 
@@ -77,9 +77,9 @@ userRouter.post('/', authenticate, authorize('super_admin', 'manager'), async (r
 });
 
 // ─── PUT /api/users/:id — update status or user details ─────────
-userRouter.put('/:id', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
+userRouter.put('/:id', authenticate, authorize('super_admin', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
-    const id = String(req.params.id);
+    const id = req.params.id;
     const { isActive, nama, role, password } = req.body;
 
     let updateData: any = {};
@@ -109,9 +109,9 @@ userRouter.put('/:id', authenticate, authorize('super_admin', 'manager'), async 
 });
 
 // ─── POST /api/users/:id/reset-password ───────────────────────
-userRouter.post('/:id/reset-password', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
+userRouter.post('/:id/reset-password', authenticate, authorize('super_admin', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
-    const id = String(req.params.id);
+    const id = req.params.id;
     const { newPassword } = req.body;
 
     if (!newPassword || newPassword.length < 6) {

@@ -21,7 +21,7 @@ discountRouter.get('/', authenticate, async (req: AuthRequest, res: Response) =>
 });
 
 // POST /api/discounts — create discount (manager only)
-discountRouter.post('/', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+discountRouter.post('/', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { kodeVoucher, tipe, nilai, minBelanja, startDate, endDate } = req.body;
 
@@ -59,12 +59,12 @@ discountRouter.post('/', authenticate, authorize('manager'), async (req: AuthReq
 });
 
 // PUT /api/discounts/:id — update discount (manager only)
-discountRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+discountRouter.put('/:id', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { kodeVoucher, tipe, nilai, minBelanja, isActive, startDate, endDate } = req.body;
 
     const discount = await prisma.discount.update({
-      where: { id: String(req.params.id) },
+      where: { id: req.params.id },
       data: {
         ...(kodeVoucher !== undefined && { kodeVoucher: kodeVoucher.toUpperCase() }),
         ...(tipe !== undefined && { tipe }),
@@ -83,10 +83,10 @@ discountRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthR
 });
 
 // DELETE /api/discounts/:id — deactivate discount (manager only)
-discountRouter.delete('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+discountRouter.delete('/:id', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     await prisma.discount.update({
-      where: { id: String(req.params.id) },
+      where: { id: req.params.id },
       data: { isActive: false },
     });
 

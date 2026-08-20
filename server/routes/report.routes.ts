@@ -6,7 +6,7 @@ export const reportRouter = Router();
 
 // All report endpoints are manager-only
 reportRouter.use(authenticate);
-reportRouter.use(authorize('manager'));
+reportRouter.use(authorize('manager') as any);
 
 // ─── GET /api/reports/daily — daily sales summary ────────────
 reportRouter.get('/daily', async (req: AuthRequest, res: Response) => {

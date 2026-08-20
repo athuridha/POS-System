@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 
@@ -33,7 +33,8 @@ settingRouter.get('/', async (_req: Request, res: Response) => {
 });
 
 // ─── PUT /api/settings (Admin/Manager - Update Cafe Settings) ───────
-settingRouter.put('/', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
+const managerAuth = authorize('super_admin', 'manager');
+settingRouter.put('/', authenticate, managerAuth as any, async (req: AuthRequest, res: Response) => {
   try {
     const { namaCafe, alamatCafe, teleponCafe, footerPesan, ukuranStruk, logoUrl } = req.body;
 

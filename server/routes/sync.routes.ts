@@ -10,7 +10,7 @@ export const syncRouter = Router();
  * Receives array of transactions created offline, inserts only those
  * that don't already exist (by clientUuid).
  */
-syncRouter.post('/transactions', authenticate, authorize('kasir', 'manager'), async (req: AuthRequest, res: Response) => {
+syncRouter.post('/transactions', authenticate, authorize('kasir', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { transactions } = req.body;
 

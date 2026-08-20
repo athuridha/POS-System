@@ -18,7 +18,7 @@ tableRouter.get('/', authenticate, async (_req: AuthRequest, res: Response) => {
 });
 
 // POST /api/tables — create table (manager only)
-tableRouter.post('/', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+tableRouter.post('/', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { nomorMeja, kapasitas } = req.body;
 
@@ -44,12 +44,12 @@ tableRouter.post('/', authenticate, authorize('manager'), async (req: AuthReques
 });
 
 // PUT /api/tables/:id — update table (manager only)
-tableRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+tableRouter.put('/:id', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { nomorMeja, kapasitas } = req.body;
 
     const table = await prisma.table.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       data: {
         ...(nomorMeja !== undefined && { nomorMeja }),
         ...(kapasitas !== undefined && { kapasitas }),
@@ -73,7 +73,7 @@ tableRouter.patch('/:id/status', authenticate, async (req: AuthRequest, res: Res
     }
 
     const table = await prisma.table.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       data: { status },
     });
 
@@ -84,9 +84,9 @@ tableRouter.patch('/:id/status', authenticate, async (req: AuthRequest, res: Res
 });
 
 // DELETE /api/tables/:id — delete table (manager only)
-tableRouter.delete('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+tableRouter.delete('/:id', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
-    await prisma.table.delete({ where: { id: req.params.id } });
+    await prisma.table.delete({ where: { id: String(req.params?.id ?? '') as string } });
     res.json({ message: 'Meja berhasil dihapus' });
   } catch (err) {
     res.status(500).json({ error: 'Gagal menghapus meja' });

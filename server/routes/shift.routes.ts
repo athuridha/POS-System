@@ -5,7 +5,7 @@ import { authenticate, authorize, AuthRequest } from '../middleware/auth';
 export const shiftRouter = Router();
 
 // ─── POST /api/shifts/open — buka shift ─────────────────────
-shiftRouter.post('/open', authenticate, authorize('kasir', 'manager'), async (req: AuthRequest, res: Response) => {
+shiftRouter.post('/open', authenticate, authorize('kasir', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { modalAwal } = req.body;
     const kasirId = req.user!.userId;
@@ -47,7 +47,7 @@ shiftRouter.post('/open', authenticate, authorize('kasir', 'manager'), async (re
 });
 
 // ─── POST /api/shifts/:id/close — tutup shift ───────────────
-shiftRouter.post('/:id/close', authenticate, authorize('kasir', 'manager'), async (req: AuthRequest, res: Response) => {
+shiftRouter.post('/:id/close', authenticate, authorize('kasir', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { kasAktual } = req.body;
@@ -169,7 +169,7 @@ shiftRouter.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 shiftRouter.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const shift = await prisma.shift.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       include: {
         kasir: { select: { id: true, nama: true, email: true } },
         transactions: {

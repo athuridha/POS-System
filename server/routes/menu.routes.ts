@@ -34,7 +34,7 @@ categoriesRouter.get('/', authenticate, async (req: AuthRequest, res: Response) 
 });
 
 // POST /api/categories — create category (manager & super_admin)
-categoriesRouter.post('/', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+categoriesRouter.post('/', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { namaKategori, urutan } = req.body;
     if (!namaKategori || !namaKategori.trim()) {
@@ -61,7 +61,7 @@ categoriesRouter.post('/', authenticate, authorize('manager', 'super_admin'), as
 });
 
 // PUT /api/categories/:id — update category (manager & super_admin)
-categoriesRouter.put('/:id', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+categoriesRouter.put('/:id', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { namaKategori, urutan, isActive } = req.body;
@@ -88,7 +88,7 @@ categoriesRouter.put('/:id', authenticate, authorize('manager', 'super_admin'), 
 });
 
 // DELETE /api/categories/:id — soft delete category (manager & super_admin)
-categoriesRouter.delete('/:id', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+categoriesRouter.delete('/:id', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -146,7 +146,7 @@ productsRouter.get('/', authenticate, async (req: AuthRequest, res: Response) =>
 productsRouter.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const product = await prisma.product.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       include: { category: true, variants: true },
     });
 
@@ -163,7 +163,7 @@ productsRouter.get('/:id', authenticate, async (req: AuthRequest, res: Response)
 });
 
 // POST /api/products — create product (manager & super_admin)
-productsRouter.post('/', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+productsRouter.post('/', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { categoryId, namaProduk, hargaDasar, imageUrl, deskripsi, variants } = req.body;
 
@@ -209,7 +209,7 @@ productsRouter.post('/', authenticate, authorize('manager', 'super_admin'), asyn
 });
 
 // PUT /api/products/:id — update product & variants (manager & super_admin)
-productsRouter.put('/:id', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+productsRouter.put('/:id', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { namaProduk, categoryId, hargaDasar, imageUrl, deskripsi, isActive, variants } = req.body;
@@ -260,7 +260,7 @@ productsRouter.put('/:id', authenticate, authorize('manager', 'super_admin'), as
 });
 
 // DELETE /api/products/:id — soft delete product (manager & super_admin)
-productsRouter.delete('/:id', authenticate, authorize('manager', 'super_admin'), async (req: AuthRequest, res: Response) => {
+productsRouter.delete('/:id', authenticate, authorize('manager', 'super_admin') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 

@@ -109,7 +109,7 @@ transactionRouter.post('/public', async (req, res) => {
 });
 
 // ─── POST /api/transactions — create transaction (online paid by kasir) ────
-transactionRouter.post('/', authenticate, authorize('kasir', 'manager'), async (req: AuthRequest, res: Response) => {
+transactionRouter.post('/', authenticate, authorize('kasir', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const {
       clientUuid,
@@ -266,12 +266,12 @@ transactionRouter.post('/', authenticate, authorize('kasir', 'manager'), async (
 });
 
 // ─── PATCH /api/transactions/:id/pay — pay unpaid transaction ──
-transactionRouter.patch('/:id/pay', authenticate, authorize('kasir', 'manager'), async (req: AuthRequest, res: Response) => {
+transactionRouter.patch('/:id/pay', authenticate, authorize('kasir', 'manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const { payments, discountId } = req.body;
 
     const existingTx = await prisma.transaction.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
     });
 
     if (!existingTx) {
@@ -301,7 +301,7 @@ transactionRouter.patch('/:id/pay', authenticate, authorize('kasir', 'manager'),
     await prisma.payment.deleteMany({ where: { transactionId: existingTx.id } });
 
     const transaction = await prisma.transaction.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       data: {
         status: 'paid',
         shiftId: activeShift.id,
@@ -394,7 +394,7 @@ transactionRouter.get('/', authenticate, async (req: AuthRequest, res: Response)
 transactionRouter.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const transaction = await prisma.transaction.findUnique({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       include: {
         items: { include: { product: true, variant: true } },
         payments: true,
@@ -416,10 +416,10 @@ transactionRouter.get('/:id', authenticate, async (req: AuthRequest, res: Respon
 });
 
 // ─── PATCH /api/transactions/:id/void — void transaction ─────
-transactionRouter.patch('/:id/void', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
+transactionRouter.patch('/:id/void', authenticate, authorize('manager') as any, async (req: AuthRequest, res: Response) => {
   try {
     const transaction = await prisma.transaction.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params?.id ?? '') as string },
       data: { status: 'void' },
     });
 

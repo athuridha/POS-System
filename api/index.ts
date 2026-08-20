@@ -1,28 +1,23 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+/**
+ * Vercel Serverless Function — single entry point for ALL /api/* routes.
+ *
+ * Uses STATIC import for server/app so esbuild traces and bundles
+ * all dependencies. The Prisma client uses Proxy-based lazy init,
+ * so no DB connection happens at import time.
+ */
+import app from '../server/app';
 
-// Lazy-loaded Express app — cached after first successful import.
-// We do NOT import at the top level because server/app.ts pulls in
-// prisma, pg, and all route modules. If any of those fail at module
-// scope, the entire Vercel function dies before handling a single request.
-let _app: ((req: VercelRequest, res: VercelResponse) => void) | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default async function handler(req: any, res: any) {
+  const url: string = req.url || '';
 
-async function getApp() {
-  if (!_app) {
-    const mod = await import('../server/app');
-    _app = mod.default as (req: VercelRequest, res: VercelResponse) => void;
-  }
-  return _app;
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const url = req.url || '';
-
-  // ─── Health check endpoints (no external deps) ─────────────
+  // ─── Health check: zero deps ─────────────────────────────────
   if (url.includes('health-basic')) {
     res.status(200).json({ phase: 1, ok: true, node: process.version });
     return;
   }
 
+  // ─── Health check: pg module ─────────────────────────────────
   if (url.includes('health-pg')) {
     try {
       const pg = await import('pg');
@@ -33,6 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // ─── Health check: @prisma/client ────────────────────────────
   if (url.includes('health-prisma-client')) {
     try {
       const pc = await import('@prisma/client');
@@ -43,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // ─── Health check: @prisma/adapter-pg ────────────────────────
   if (url.includes('health-adapter')) {
     try {
       const adapter = await import('@prisma/adapter-pg');
@@ -53,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // ─── Health check: full DB connection ─────────────────────────
   if (url.includes('health-db')) {
     try {
       const pg = await import('pg');
@@ -60,7 +58,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { PrismaClient } = await import('@prisma/client');
 
       const dbUrl = process.env.DATABASE_URL;
-      const pool = new pg.default.Pool({ connectionString: dbUrl, max: 1, connectionTimeoutMillis: 5000 });
+      const pool = new (pg as any).default.Pool({
+        connectionString: dbUrl,
+        max: 1,
+        connectionTimeoutMillis: 5000,
+      });
       const adapter = new PrismaPg(pool);
       const prisma = new PrismaClient({ adapter });
 
@@ -87,27 +89,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (url.includes('health-app')) {
-    try {
-      const app = await getApp();
-      res.status(200).json({ phase: 6, ok: true, hasApp: !!app });
-    } catch (err: any) {
-      res.status(500).json({
-        phase: 6,
-        error: 'server/app import failed',
-        message: err?.message,
-        stack: err?.stack?.split('\n').slice(0, 5),
-      });
-    }
-    return;
-  }
-
-  // ─── Default: route all API requests through Express app ────
+  // ─── Default: route all API requests through Express app ──────
   try {
-    const app = await getApp();
     app(req, res);
   } catch (err: any) {
-    console.error('Failed to load Express app:', err);
+    console.error('Failed to handle request:', err);
     if (!res.headersSent) {
       res.status(500).json({
         error: 'Server failed to initialize',
