@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import app from '../server/app';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';
@@ -75,8 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (url.includes('health-app')) {
     try {
-      const appModule = await import('../server/app');
-      res.status(200).json({ phase: 6, ok: true, hasDefault: !!appModule.default });
+      res.status(200).json({ phase: 6, ok: true, hasDefault: !!app });
     } catch (err: any) {
       res.status(500).json({
         phase: 6,
@@ -88,9 +88,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Default: handle all API requests via Express app
-  // No try/catch wrapper — Express handles its own errors
-  // No finally/disconnect — Vercel terminates the process after response
-  const appModule = await import('../server/app');
-  const app = appModule.default;
+  // app is statically imported at the top — Vercel nft can trace it
   app(req, res);
 }
