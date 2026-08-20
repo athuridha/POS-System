@@ -71,9 +71,11 @@ authRouter.post('/login', async (req, res: Response) => {
         role: user.role,
       },
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      error: err?.message || 'Terjadi kesalahan sistem server/database saat login',
+    });
   }
 });
 
