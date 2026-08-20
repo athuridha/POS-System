@@ -17,6 +17,8 @@ import {
   ArrowsOutCardinal,
 } from '@phosphor-icons/react';
 import { useSettingsStore } from '../stores/settingsStore';
+import api from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 
 export default function SettingsPage() {
   const { namaCafe, alamatCafe, teleponCafe, footerPesan, ukuranStruk, logoUrl, updateSettings } = useSettingsStore();
@@ -28,6 +30,8 @@ export default function SettingsPage() {
   const [formUkuran, setFormUkuran] = useState<'58mm' | '80mm'>(ukuranStruk);
   const [formLogo, setFormLogo] = useState(logoUrl);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Cropper Modal state
   const [rawImageToCrop, setRawImageToCrop] = useState<string | null>(null);
@@ -46,8 +50,8 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran gambar terlalu besar. Maksimal 5MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran gambar terlalu besar. Maksimal 10MB.');
       return;
     }
 
@@ -59,30 +63,63 @@ export default function SettingsPage() {
     };
     reader.readAsDataURL(file);
 
-    // Reset input value so same file can be chosen again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const handleCropComplete = (croppedDataUrl: string) => {
-    setFormLogo(croppedDataUrl);
+  const handleCropComplete = async (croppedDataUrl: string) => {
     setRawImageToCrop(null);
+    setFormLogo(croppedDataUrl);
+
+    // Upload to Vercel Blob in background
+    try {
+      setUploadingLogo(true);
+      const { data } = await api.post('/upload', {
+        image: croppedDataUrl,
+        filename: 'cafe-logo.png',
+        folder: 'logos',
+      });
+      if (data.url) {
+        setFormLogo(data.url);
+      }
+    } catch (err) {
+      console.warn('Fallback to local Data URL:', err);
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({
+    setSaving(true);
+
+    const payload = {
       namaCafe: formNama,
       alamatCafe: formAlamat,
       teleponCafe: formTelepon,
       footerPesan: formFooter,
       ukuranStruk: formUkuran,
       logoUrl: formLogo,
-    });
+    };
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      // 1. Save to PostgreSQL Database
+      await api.put('/settings', payload);
+
+      // 2. Update Client State & LocalStorage
+      updateSettings(payload);
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3500);
+    } catch (err) {
+      // Fallback local update if offline
+      updateSettings(payload);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3500);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

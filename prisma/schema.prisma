@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -183,3 +182,18 @@ model Discount {
 
   @@map("discounts")
 }
+
+// ─── Cafe & System Settings ──────────────────────────────────
+model Setting {
+  id          String   @id @default("default")
+  namaCafe    String   @default("POS Cafe")
+  alamatCafe  String   @default("")
+  teleponCafe String   @default("")
+  footerPesan String   @default("Terima kasih atas kunjungan Anda!")
+  ukuranStruk String   @default("80mm")
+  logoUrl     String   @default("https://placehold.co/120x120/10b981/ffffff?text=POS+Cafe")
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+

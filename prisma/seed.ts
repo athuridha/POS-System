@@ -682,6 +682,25 @@ async function main() {
   }
   console.log(`✅ Discounts ready: ${totalDiscounts} Vouchers.`);
 
+  // ─── 5. Cafe Settings ───────────────────────────────────────
+  console.log('⚙️ Seeding cafe settings...');
+  await prisma.setting.upsert({
+    where: { id: 'default' },
+    update: {
+      logoUrl: 'https://qeyi9ei1i8soimaw.public.blob.vercel-storage.com/pos-cafe/logo.png',
+    },
+    create: {
+      id: 'default',
+      namaCafe: 'POS CAFE',
+      alamatCafe: 'Jl. Kopi Melati No. 12, Jakarta',
+      teleponCafe: '(021) 555-0199',
+      footerPesan: 'Terima kasih atas kunjungan Anda!',
+      ukuranStruk: '80mm',
+      logoUrl: 'https://qeyi9ei1i8soimaw.public.blob.vercel-storage.com/pos-cafe/logo.png',
+    },
+  });
+  console.log('✅ Cafe settings ready (with Vercel Blob logo).');
+
   console.log('🎉 Seed completed successfully!');
 }
 

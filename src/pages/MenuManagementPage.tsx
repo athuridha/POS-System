@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -11,6 +11,7 @@ import {
   Check,
   Image as ImageIcon,
   Sparkle,
+  UploadSimple,
 } from '@phosphor-icons/react';
 import api from '../lib/api';
 import { formatRupiah, getErrorMessage } from '../lib/utils';
@@ -297,7 +298,41 @@ function ProductFormModal({
     product?.variants?.map((v) => ({ namaVarian: v.namaVarian, hargaTambahan: v.hargaTambahan.toString() })) || []
   );
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ukuran gambar maksimal 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if (typeof reader.result === 'string') {
+        try {
+          setUploadingImage(true);
+          const { data } = await api.post('/upload', {
+            image: reader.result,
+            filename: file.name || 'product.png',
+            folder: 'products',
+          });
+          if (data.url) {
+            setImageUrl(data.url);
+          }
+        } catch (err: any) {
+          setError(getErrorMessage(err, 'Gagal mengupload gambar ke Vercel Blob'));
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -394,15 +429,43 @@ function ProductFormModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5">URL Foto / Gambar</label>
-            <div className="flex gap-2">
+            <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Foto / Gambar Menu</span>
+              <span className="text-[10px] text-zinc-400 font-normal">URL atau Upload File</span>
+            </label>
+            <div className="flex gap-2 items-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
               <input
                 type="url"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/photo-..."
+                placeholder="https://images.unsplash.com/... atau klik Upload"
                 className="flex-1 h-11 px-3.5 rounded-xl border border-zinc-300 bg-white text-xs font-mono text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
               />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="h-11 px-3.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 disabled:opacity-60"
+              >
+                {uploadingImage ? (
+                  <>
+                    <CircleNotch size={14} className="animate-spin text-emerald-600" />
+                    <span>Upload...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadSimple size={14} />
+                    <span>Upload</span>
+                  </>
+                )}
+              </button>
               {imageUrl && (
                 <img
                   src={imageUrl}

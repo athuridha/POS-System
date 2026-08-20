@@ -114,17 +114,18 @@ function AdminOrManagerGuard({ children }: { children: React.ReactNode }) {
 
 function AppInit({ children }: { children: React.ReactNode }) {
   const { loadFromStorage: loadAuth } = useAuthStore();
-  const { loadFromStorage: loadSettings, namaCafe, logoUrl } = useSettingsStore();
+  const { loadFromStorage: loadSettings, fetchSettingsFromDatabase, namaCafe, logoUrl } = useSettingsStore();
   const { loadFromStorage: loadGateway } = usePaymentGatewayStore();
 
   useEffect(() => {
     loadAuth();
     loadSettings();
+    fetchSettingsFromDatabase();
     loadGateway();
 
     const cleanup = initSyncEngine();
     return cleanup;
-  }, [loadAuth, loadSettings, loadGateway]);
+  }, [loadAuth, loadSettings, fetchSettingsFromDatabase, loadGateway]);
 
   // Dynamically update browser tab title and favicon
   useEffect(() => {

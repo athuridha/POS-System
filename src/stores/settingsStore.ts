@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../lib/api';
 
 export interface CafeSettings {
   namaCafe: string;
@@ -12,6 +13,7 @@ export interface CafeSettings {
 interface SettingsState extends CafeSettings {
   updateSettings: (newSettings: Partial<CafeSettings>) => void;
   loadFromStorage: () => void;
+  fetchSettingsFromDatabase: () => Promise<void>;
 }
 
 const DEFAULT_SETTINGS: CafeSettings = {
@@ -43,7 +45,7 @@ function getInitialSettings(): CafeSettings {
   return DEFAULT_SETTINGS;
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
+export const useSettingsStore = create<SettingsState>((set, get) => ({
   ...getInitialSettings(),
 
   updateSettings: (newSettings) => {
@@ -69,4 +71,24 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   loadFromStorage: () => {
     set(getInitialSettings());
   },
+
+  fetchSettingsFromDatabase: async () => {
+    try {
+      const { data } = await api.get('/settings');
+      if (data?.setting) {
+        const s = data.setting;
+        get().updateSettings({
+          namaCafe: s.namaCafe || DEFAULT_SETTINGS.namaCafe,
+          alamatCafe: s.alamatCafe || DEFAULT_SETTINGS.alamatCafe,
+          teleponCafe: s.teleponCafe || DEFAULT_SETTINGS.teleponCafe,
+          footerPesan: s.footerPesan || DEFAULT_SETTINGS.footerPesan,
+          ukuranStruk: (s.ukuranStruk === '58mm' ? '58mm' : '80mm'),
+          logoUrl: s.logoUrl || DEFAULT_SETTINGS.logoUrl,
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch settings from DB, using cached settings:', err);
+    }
+  },
 }));
+
