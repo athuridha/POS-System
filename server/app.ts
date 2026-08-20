@@ -12,6 +12,7 @@ import { reportRouter } from './routes/report.routes';
 import { userRouter } from './routes/user.routes';
 import { uploadRouter } from './routes/upload.routes';
 import { settingRouter } from './routes/setting.routes';
+import { prisma } from './lib/prisma';
 
 dotenv.config();
 
@@ -39,7 +40,6 @@ app.get('/api/health', async (_req, res) => {
   };
 
   try {
-    const { prisma } = await import('../lib/prisma');
     const userCount = await prisma.user.count();
     diagnostics.database = { connected: true, userCount };
   } catch (err: any) {
