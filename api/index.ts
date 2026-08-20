@@ -1,10 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import app from '../server/app';
+
+// Lazy-loaded Express app — cached after first successful import.
+// We do NOT import at the top level because server/app.ts pulls in
+// prisma, pg, and all route modules. If any of those fail at module
+// scope, the entire Vercel function dies before handling a single request.
+let _app: ((req: VercelRequest, res: VercelResponse) => void) | null = null;
+
+async function getApp() {
+  if (!_app) {
+    const mod = await import('../server/app');
+    _app = mod.default as (req: VercelRequest, res: VercelResponse) => void;
+  }
+  return _app;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';
 
-  // Health check endpoints for debugging
+  // ─── Health check endpoints (no external deps) ─────────────
   if (url.includes('health-basic')) {
     res.status(200).json({ phase: 1, ok: true, node: process.version });
     return;
@@ -76,18 +89,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (url.includes('health-app')) {
     try {
-      res.status(200).json({ phase: 6, ok: true, hasDefault: !!app });
+      const app = await getApp();
+      res.status(200).json({ phase: 6, ok: true, hasApp: !!app });
     } catch (err: any) {
       res.status(500).json({
         phase: 6,
         error: 'server/app import failed',
         message: err?.message,
+        stack: err?.stack?.split('\n').slice(0, 5),
       });
     }
     return;
   }
 
-  // Default: handle all API requests via Express app
-  // app is statically imported at the top — Vercel nft can trace it
-  app(req, res);
+  // ─── Default: route all API requests through Express app ────
+  try {
+    const app = await getApp();
+    app(req, res);
+  } catch (err: any) {
+    console.error('Failed to load Express app:', err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: 'Server failed to initialize',
+        message: err?.message,
+      });
+    }
+  }
 }
