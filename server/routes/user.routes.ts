@@ -79,7 +79,7 @@ userRouter.post('/', authenticate, authorize('super_admin', 'manager'), async (r
 // ─── PUT /api/users/:id — update status or user details ─────────
 userRouter.put('/:id', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { isActive, nama, role, password } = req.body;
 
     let updateData: any = {};
@@ -111,7 +111,7 @@ userRouter.put('/:id', authenticate, authorize('super_admin', 'manager'), async 
 // ─── POST /api/users/:id/reset-password ───────────────────────
 userRouter.post('/:id/reset-password', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const { newPassword } = req.body;
 
     if (!newPassword || newPassword.length < 6) {

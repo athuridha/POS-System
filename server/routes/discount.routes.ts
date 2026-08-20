@@ -64,7 +64,7 @@ discountRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthR
     const { kodeVoucher, tipe, nilai, minBelanja, isActive, startDate, endDate } = req.body;
 
     const discount = await prisma.discount.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: {
         ...(kodeVoucher !== undefined && { kodeVoucher: kodeVoucher.toUpperCase() }),
         ...(tipe !== undefined && { tipe }),
@@ -86,7 +86,7 @@ discountRouter.put('/:id', authenticate, authorize('manager'), async (req: AuthR
 discountRouter.delete('/:id', authenticate, authorize('manager'), async (req: AuthRequest, res: Response) => {
   try {
     await prisma.discount.update({
-      where: { id: req.params.id },
+      where: { id: String(req.params.id) },
       data: { isActive: false },
     });
 

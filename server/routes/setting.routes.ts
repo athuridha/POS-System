@@ -33,7 +33,7 @@ settingRouter.get('/', async (_req: Request, res: Response) => {
 });
 
 // ─── PUT /api/settings (Admin/Manager - Update Cafe Settings) ───────
-settingRouter.put('/', authenticate, authorize(['super_admin', 'manager']), async (req: AuthRequest, res: Response) => {
+settingRouter.put('/', authenticate, authorize('super_admin', 'manager'), async (req: AuthRequest, res: Response) => {
   try {
     const { namaCafe, alamatCafe, teleponCafe, footerPesan, ukuranStruk, logoUrl } = req.body;
 
